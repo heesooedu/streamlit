@@ -100,7 +100,42 @@ choice = st.sidebar.selectbox("메뉴 선택", menu)
 if choice == "메인":
     st.subheader("좌측 상단 사이드바(>)에서 설문을 선택하세요.")
 
-elif choice in ["사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)"]:
+elif choice == "사전설문":
+    st.subheader("사전설문 페이지")
+    st.write("**학교에서 디지털 교육 혁신을 추진하는 과정에서 가장 큰 도전 과제는 무엇이라고 생각하십니까?**")
+    
+    options = [
+        "1. 예산 및 자원 부족",
+        "2. 교사의 디지털 역량 강화 어려움",
+        "3. AI 및 디지털 콘텐츠의 부족과 적절한 선택의 어려움",
+        "4. 교사 및 학부모의 디지털 혁신에 대한 저항",
+        "5. 학생의 디지털 윤리 및 책임 교육의 필요성",
+        "6. 학생들의 디지털 역량 격차",
+        "7. 교육 혁신에 대한 구체적인 성공 사례 부족",
+        "8. 기타 (직접 입력)"
+    ]
+    
+    with st.form("사전설문_form"):
+        name = st.text_input("이름")
+        selected_option = st.radio("다음 중 하나를 선택하세요", options)
+        other_answer = None
+        
+        # "8번 기타"를 선택한 경우 추가 입력 필드 표시
+        if selected_option == "8. 기타 (직접 입력)":
+            other_answer = st.text_area("기타 의견을 입력하세요")
+        
+        submitted = st.form_submit_button("제출")
+        
+        if submitted:
+            answer = selected_option
+            # "기타" 응답이 있으면 선택지와 함께 추가
+            if selected_option == "8. 기타 (직접 입력)" and other_answer:
+                answer = f"{selected_option}: {other_answer}"
+            
+            save_data("사전설문", name, answer)
+            st.success("설문이 저장되었습니다!")
+
+elif choice in ["1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)"]:
     st.subheader(f"{choice} 페이지")
     with st.form(f"{choice}_form"):
         name = st.text_input("이름")
