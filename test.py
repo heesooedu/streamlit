@@ -16,7 +16,7 @@ if "logged_in" not in st.session_state:
 def load_data():
     if os.path.exists(DATA_FILE):
         return pd.read_csv(DATA_FILE)
-    return pd.DataFrame(columns=["Survey", "Name", "Answer"])
+    return pd.DataFrame(columns=["Survey", "Answer"])
 
 # 데이터 저장 함수
 def save_data(survey, answer):
@@ -100,7 +100,6 @@ if choice == "메인":
     st.subheader("좌측 상단 사이드바(>)에서 설문을 선택하세요.")
 
 elif choice == "사전설문":
-    st.subheader("사전설문 페이지")
     st.write("**학교에서 디지털 교육 혁신을 추진하는 과정에서 가장 큰 도전 과제는 무엇이라고 생각하십니까?**")
     
     options = [
@@ -114,24 +113,20 @@ elif choice == "사전설문":
         "8. 기타 (직접 입력)"
     ]
     
-    with st.form("사전설문_form"):
-        selected_option = st.radio("다음 중 하나를 선택하세요", options)
-        other_answer = None
+    selected_option = st.radio("다음 중 하나를 선택하세요", options)
+    other_answer = ""
+
+    # "8번 기타"를 선택한 경우 즉시 주관식 입력 필드 표시
+    if selected_option == "8. 기타 (직접 입력)":
+        other_answer = st.text_area("기타 의견을 입력하세요")
+    
+    if st.button("제출"):
+        answer = selected_option
+        if selected_option == "8. 기타 (직접 입력)" and other_answer:
+            answer = f"{selected_option}: {other_answer}"
         
-        # "8번 기타"를 선택한 경우 추가 입력 필드 표시
-        if selected_option == "8. 기타 (직접 입력)":
-            other_answer = st.text_area("기타 의견을 입력하세요", key="other_input")
-        
-        submitted = st.form_submit_button("제출")
-        
-        if submitted:
-            answer = selected_option
-            # "기타" 응답이 있으면 선택지와 함께 추가
-            if selected_option == "8. 기타 (직접 입력)" and other_answer:
-                answer = f"{selected_option}: {other_answer}"
-            
-            save_data("사전설문", answer)
-            st.success("설문이 저장되었습니다!")
+        save_data("사전설문", answer)
+        st.success("설문이 저장되었습니다!")
 
 elif choice in ["1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)"]:
     st.subheader(f"{choice} 페이지")
@@ -155,4 +150,3 @@ elif choice == "결과 보기":
     else:
         st.warning("관리자만 접근할 수 있습니다. 먼저 로그인하세요.")
         admin_login()
-
