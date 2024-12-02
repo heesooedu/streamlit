@@ -19,9 +19,9 @@ def load_data():
     return pd.DataFrame(columns=["Survey", "Name", "Answer"])
 
 # 데이터 저장 함수
-def save_data(survey, name, answer):
+def save_data(survey, answer):
     data = load_data()
-    new_data = pd.DataFrame({"Survey": [survey], "Name": [name], "Answer": [answer]})
+    new_data = pd.DataFrame({"Survey": [survey], "Answer": [answer]})
     data = pd.concat([data, new_data], ignore_index=True)
     data.to_csv(DATA_FILE, index=False)
 
@@ -30,7 +30,7 @@ def delete_all_data():
     if os.path.exists(DATA_FILE):
         os.remove(DATA_FILE)
     # 빈 파일 생성
-    pd.DataFrame(columns=["Survey", "Name", "Answer"]).to_csv(DATA_FILE, index=False)
+    pd.DataFrame(columns=["Survey", "Answer"]).to_csv(DATA_FILE, index=False)
 
 # 워드클라우드 생성 함수
 def generate_wordcloud(text):
@@ -86,7 +86,6 @@ def admin_login():
 
 # 메인 페이지
 st.title("세션1 AI디지털 시대 학교경영")
-st.title("설문조사")
 
 # 기본 메뉴
 menu = ["메인", "사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)", "관리자 페이지"]
@@ -116,13 +115,12 @@ elif choice == "사전설문":
     ]
     
     with st.form("사전설문_form"):
-        name = st.text_input("이름")
         selected_option = st.radio("다음 중 하나를 선택하세요", options)
         other_answer = None
         
         # "8번 기타"를 선택한 경우 추가 입력 필드 표시
         if selected_option == "8. 기타 (직접 입력)":
-            other_answer = st.text_area("기타 의견을 입력하세요")
+            other_answer = st.text_area("기타 의견을 입력하세요", key="other_input")
         
         submitted = st.form_submit_button("제출")
         
@@ -132,7 +130,7 @@ elif choice == "사전설문":
             if selected_option == "8. 기타 (직접 입력)" and other_answer:
                 answer = f"{selected_option}: {other_answer}"
             
-            save_data("사전설문", name, answer)
+            save_data("사전설문", answer)
             st.success("설문이 저장되었습니다!")
 
 elif choice in ["1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)"]:
@@ -142,7 +140,7 @@ elif choice in ["1번 질문(김태원 대표님)", "2번 질문(이준호 교�
         answer = st.text_area("질문에 대한 답변을 입력하세요")
         submitted = st.form_submit_button("제출")
         if submitted:
-            save_data(choice, name, answer)
+            save_data(choice, answer)
             st.success("설문이 저장되었습니다!")
 
 elif choice == "관리자 페이지":
@@ -157,3 +155,4 @@ elif choice == "결과 보기":
     else:
         st.warning("관리자만 접근할 수 있습니다. 먼저 로그인하세요.")
         admin_login()
+
