@@ -22,7 +22,7 @@ def save_data(survey, name, answer):
 
 # 워드클라우드 생성 함수
 def generate_wordcloud(text):
-    font_path = "HakgyoansimNadeuriTTFB.ttf"  # 폰트 파일 이름
+    font_path = "Hakgyoansim Nadeuri TTF B.ttf"  # 폰트 파일 이름
     wordcloud = WordCloud(font_path=font_path, width=800, height=400, background_color="white").generate(text)
     return wordcloud
 
