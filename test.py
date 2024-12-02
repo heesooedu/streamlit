@@ -11,8 +11,6 @@ ADMIN_PASSWORD = "admin123"  # 관리자 비밀번호
 # 세션 상태 초기화
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
-if "current_page" not in st.session_state:
-    st.session_state["current_page"] = "메인"
 
 # 데이터 불러오기 함수
 def load_data():
@@ -40,18 +38,6 @@ def generate_wordcloud(text):
     wordcloud = WordCloud(font_path=font_path, width=800, height=400, background_color="white").generate(text)
     return wordcloud
 
-# 관리자 로그인 페이지
-def admin_login():
-    st.subheader("관리자 로그인")
-    password = st.text_input("비밀번호를 입력하세요", type="password")
-    if st.button("로그인"):
-        if password == ADMIN_PASSWORD:
-            st.session_state["logged_in"] = True
-            st.session_state["current_page"] = "관리자 페이지"
-            st.success("로그인 성공! 페이지가 전환됩니다.")
-        else:
-            st.error("비밀번호가 틀렸습니다.")
-
 # 결과 보기 페이지
 def admin_page():
     st.subheader("설문조사 결과")
@@ -73,7 +59,6 @@ def admin_page():
         st.subheader(f"{question} 데이터")
         question_data = data[data["Survey"] == question]
         if not question_data.empty:
-            # 긴 답변 줄바꿈 설정
             st.table(
                 question_data.style.set_properties(
                     subset=["Answer"], **{"white-space": "pre-wrap"}
@@ -88,12 +73,31 @@ def admin_page():
         delete_all_data()
         st.warning("모든 데이터가 삭제되었습니다!")
 
+# 관리자 로그인 페이지
+def admin_login():
+    st.subheader("관리자 로그인")
+    password = st.text_input("비밀번호를 입력하세요", type="password")
+    if st.button("로그인"):
+        if password == ADMIN_PASSWORD:
+            st.session_state["logged_in"] = True
+            st.success("로그인 성공!")
+        else:
+            st.error("비밀번호가 틀렸습니다.")
+
 # 메인 페이지
-def main_page():
+st.title("세션1 AI디지털 시대 학교경영")
+st.title("설문조사")
+
+menu = ["메인", "사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)"]
+if st.session_state["logged_in"]:
+    menu.append("결과 보기")  # 로그인 성공 시 결과 보기 메뉴 추가
+
+choice = st.sidebar.selectbox("메뉴 선택", menu)
+
+if choice == "메인":
     st.subheader("좌측 사이드바에서 설문을 선택하세요.")
 
-# 설문조사 페이지
-def survey_page(choice):
+elif choice in ["사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)"]:
     st.subheader(f"{choice} 페이지")
     with st.form(f"{choice}_form"):
         name = st.text_input("이름")
@@ -103,19 +107,9 @@ def survey_page(choice):
             save_data(choice, name, answer)
             st.success("설문이 저장되었습니다!")
 
-# 앱 실행
-menu = ["메인", "사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)", "관리자 페이지"]
-if st.session_state["logged_in"]:
-    menu.remove("관리자 페이지")  # 로그인 후에는 관리자 페이지를 별도 선택할 필요 없음
-choice = st.sidebar.selectbox("메뉴 선택", menu)
-
-# 페이지 라우팅
-if st.session_state["logged_in"] and st.session_state["current_page"] == "관리자 페이지":
-    admin_page()
-elif choice == "관리자 페이지":
-    admin_login()
-else:
-    if choice == "메인":
-        main_page()
+elif choice == "결과 보기":
+    if st.session_state["logged_in"]:
+        admin_page()
     else:
-        survey_page(choice)
+        st.warning("관리자만 접근할 수 있습니다. 먼저 로그인하세요.")
+        admin_login()
