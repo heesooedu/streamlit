@@ -30,13 +30,13 @@ def generate_wordcloud(text):
 st.title("세션1 AI디지털 시대 학교경영")
 st.title("설문조사")
 
-menu = ["메인", "사전설문", "2번 설문", "3번 설문", "4번 설문", "결과 보기"]
+menu = ["메인", "사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)", "결과 보기"]
 choice = st.sidebar.selectbox("메뉴 선택", menu)
 
 if choice == "메인":
     st.subheader("좌측 사이드바에서 설문을 선택하세요.")
 
-elif choice in ["사전설문", "2번 설문", "3번 설문", "4번 설문"]:
+elif choice in ["사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)"]:
     st.subheader(f"{choice} 페이지")
     with st.form(f"{choice}_form"):
         name = st.text_input("이름")
