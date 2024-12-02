@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 import re  # 정규표현식 사용
+import os
 
 # 데이터 저장용 파일
 DATA_FILE = "survey_data.csv"
