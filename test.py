@@ -2,43 +2,28 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
-import re  # 정규표현식 사용
 import os
 
 # 데이터 저장용 파일
 DATA_FILE = "survey_data.csv"
 
+# 데이터 불러오기 함수
 def load_data():
-    current_dir = os.path.dirname(os.path.abspath(__file__))  # 현재 파일의 디렉토리
-    data_file_path = os.path.join(current_dir, DATA_FILE)     # 파일 경로 생성
-    if os.path.exists(data_file_path):
-        return pd.read_csv(data_file_path)
+    if os.path.exists(DATA_FILE):
+        return pd.read_csv(DATA_FILE)
     return pd.DataFrame(columns=["Survey", "Name", "Answer"])
 
-
+# 데이터 저장 함수
 def save_data(survey, name, answer):
     data = load_data()
     new_data = pd.DataFrame({"Survey": [survey], "Name": [name], "Answer": [answer]})
     data = pd.concat([data, new_data], ignore_index=True)
-
-    # 파일 저장
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    data_file_path = os.path.join(current_dir, DATA_FILE)
-    data.to_csv(data_file_path, index=False)
-
-
-# 한글 단어 추출 함수
-def extract_nouns(text):
-    # 정규표현식을 사용하여 한글 명사형 단어 추출
-    words = re.findall(r"[가-힣]{2,}", text)  # 2글자 이상의 한글 단어 추출
-    return " ".join(words)
+    data.to_csv(DATA_FILE, index=False)
 
 # 워드클라우드 생성 함수
 def generate_wordcloud(text):
-    # 한글 명사 추출
-    processed_text = extract_nouns(text)
     font_path = "Hakgyoansim Nadeuri TTF B.ttf"  # 폰트 파일 이름
-    wordcloud = WordCloud(font_path=font_path, width=800, height=400, background_color="white").generate(processed_text)
+    wordcloud = WordCloud(font_path=font_path, width=800, height=400, background_color="white").generate(text)
     return wordcloud
 
 # 메인 페이지
@@ -49,8 +34,7 @@ menu = ["메인", "사전설문", "2번 설문", "3번 설문", "4번 설문", "
 choice = st.sidebar.selectbox("메뉴 선택", menu)
 
 if choice == "메인":
-    st.subheader("설문조사에 참여해주세요!")
-    st.write("좌측 사이드바에서 설문을 선택하세요.")
+    st.subheader("좌측 사이드바에서 설문을 선택하세요.")
 
 elif choice in ["사전설문", "2번 설문", "3번 설문", "4번 설문"]:
     st.subheader(f"{choice} 페이지")
