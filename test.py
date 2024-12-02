@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-from wordcloud import WordCloud
+from collections import Counter
 import os
 
 # 데이터 저장용 파일
@@ -32,28 +32,53 @@ def delete_all_data():
     # 빈 파일 생성
     pd.DataFrame(columns=["Survey", "Answer"]).to_csv(DATA_FILE, index=False)
 
-# 워드클라우드 생성 함수
-def generate_wordcloud(text):
-    font_path = "Hakgyoansim Nadeuri TTF B.ttf"  # 폰트 파일 이름
-    wordcloud = WordCloud(font_path=font_path, width=800, height=400, background_color="white").generate(text)
-    return wordcloud
+# 사전설문 결과 시각화
+def visualize_survey_results(data):
+    # 사전설문 데이터 필터링
+    survey_data = data[data["Survey"] == "사전설문"]
+    
+    # 1~7번 응답 카운팅
+    predefined_answers = [
+        "1. 예산 및 자원 부족",
+        "2. 교사의 디지털 역량 강화 어려움",
+        "3. AI 및 디지털 콘텐츠의 부족과 적절한 선택의 어려움",
+        "4. 교사 및 학부모의 디지털 혁신에 대한 저항",
+        "5. 학생의 디지털 윤리 및 책임 교육의 필요성",
+        "6. 학생들의 디지털 역량 격차",
+        "7. 교육 혁신에 대한 구체적인 성공 사례 부족"
+    ]
+    predefined_counts = Counter(answer for answer in survey_data["Answer"] if answer in predefined_answers)
+
+    # 기타 응답 필터링
+    other_responses = survey_data[~survey_data["Answer"].isin(predefined_answers)]["Answer"].tolist()
+
+    # 파이차트 데이터
+    labels = list(predefined_counts.keys())
+    sizes = list(predefined_counts.values())
+    colors = plt.cm.Paired.colors[:len(labels)]  # 자동 색상 설정
+
+    # 파이차트 시각화
+    st.subheader("사전설문 응답 비율")
+    fig, ax = plt.subplots()
+    ax.pie(sizes, labels=labels, autopct="%1.1f%%", startangle=90, colors=colors)
+    ax.axis("equal")  # 파이차트를 원형으로 유지
+    st.pyplot(fig)
+
+    # 기타 응답 표시
+    st.subheader("기타 응답")
+    if other_responses:
+        for idx, response in enumerate(other_responses, 1):
+            st.write(f"{idx}. {response}")
+    else:
+        st.write("기타 응답이 없습니다.")
 
 # 결과 보기 페이지
 def admin_page():
     st.subheader("설문조사 결과")
     data = load_data()
 
-    if st.checkbox("1번 설문 결과 (워드클라우드) 보기"):
-        survey1_data = data[data["Survey"] == "사전설문"]["Answer"].dropna()
-        text = " ".join(survey1_data)
-        if text:
-            wordcloud = generate_wordcloud(text)
-            plt.figure(figsize=(10, 5))
-            plt.imshow(wordcloud, interpolation="bilinear")
-            plt.axis("off")
-            st.pyplot(plt)
-        else:
-            st.write("데이터가 없습니다.")
+    if not data.empty:
+        visualize_survey_results(data)
 
     for question in ["2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)", "4번 질문(정진선 교장님)"]:
         st.subheader(f"{question} 데이터")
@@ -86,6 +111,7 @@ def admin_login():
 
 # 메인 페이지
 st.title("세션1 AI디지털 시대 학교경영")
+st.title("설문조사")
 
 # 기본 메뉴
 menu = ["메인", "사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)", "관리자 페이지"]
@@ -100,6 +126,7 @@ if choice == "메인":
     st.subheader("좌측 상단 사이드바(>)에서 설문을 선택하세요.")
 
 elif choice == "사전설문":
+    st.subheader("사전설문 페이지")
     st.write("**학교에서 디지털 교육 혁신을 추진하는 과정에서 가장 큰 도전 과제는 무엇이라고 생각하십니까?**")
     
     options = [
