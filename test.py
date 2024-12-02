@@ -2,8 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
-from mecab import MeCab  # mecab-python3 사용
-import os
+import re  # 정규표현식 사용
 
 # 데이터 저장용 파일
 DATA_FILE = "survey_data.csv"
@@ -21,13 +20,16 @@ def save_data(survey, name, answer):
     data = pd.concat([data, new_data], ignore_index=True)
     data.to_csv(DATA_FILE, index=False)
 
-# 명사 추출 및 워드클라우드 생성 함수
+# 한글 단어 추출 함수
+def extract_nouns(text):
+    # 정규표현식을 사용하여 한글 명사형 단어 추출
+    words = re.findall(r"[가-힣]{2,}", text)  # 2글자 이상의 한글 단어 추출
+    return " ".join(words)
+
+# 워드클라우드 생성 함수
 def generate_wordcloud(text):
-    mecab = MeCab()
-    # 한국어 명사 추출
-    nouns = [word for word, pos in mecab.pos(text) if pos == "NNG" or pos == "NNP"]
-    # 명사 리스트를 문자열로 변환
-    processed_text = " ".join(nouns)
+    # 한글 명사 추출
+    processed_text = extract_nouns(text)
     font_path = "Hakgyoansim Nadeuri TTF B.ttf"  # 폰트 파일 이름
     wordcloud = WordCloud(font_path=font_path, width=800, height=400, background_color="white").generate(processed_text)
     return wordcloud
