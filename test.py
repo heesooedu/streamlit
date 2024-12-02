@@ -98,7 +98,7 @@ if st.session_state["logged_in"]:
 choice = st.sidebar.selectbox("메뉴 선택", menu)
 
 if choice == "메인":
-    st.subheader("좌측 사이드바에서 설문을 선택하세요.")
+    st.subheader("좌측 상단 사이드바(>)에서 설문을 선택하세요.")
 
 elif choice in ["사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)"]:
     st.subheader(f"{choice} 페이지")
