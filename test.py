@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
-from konlpy.tag import Okt  # 한국어 형태소 분석기
+from mecab import MeCab  # mecab-python3 사용
 import os
 
 # 데이터 저장용 파일
@@ -23,9 +23,9 @@ def save_data(survey, name, answer):
 
 # 명사 추출 및 워드클라우드 생성 함수
 def generate_wordcloud(text):
-    okt = Okt()
+    mecab = MeCab()
     # 한국어 명사 추출
-    nouns = okt.nouns(text)
+    nouns = [word for word, pos in mecab.pos(text) if pos == "NNG" or pos == "NNP"]
     # 명사 리스트를 문자열로 변환
     processed_text = " ".join(nouns)
     font_path = "Hakgyoansim Nadeuri TTF B.ttf"  # 폰트 파일 이름
@@ -40,7 +40,8 @@ menu = ["메인", "사전설문", "2번 설문", "3번 설문", "4번 설문", "
 choice = st.sidebar.selectbox("메뉴 선택", menu)
 
 if choice == "메인":
-    st.subheader("좌측 사이드바에서 설문을 선택하세요.")
+    st.subheader("설문조사에 참여해주세요!")
+    st.write("좌측 사이드바에서 설문을 선택하세요.")
 
 elif choice in ["사전설문", "2번 설문", "3번 설문", "4번 설문"]:
     st.subheader(f"{choice} 페이지")
