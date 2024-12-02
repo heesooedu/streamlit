@@ -80,7 +80,7 @@ def admin_login():
     if st.button("로그인"):
         if password == ADMIN_PASSWORD:
             st.session_state["logged_in"] = True
-            st.success("로그인 성공!")
+            st.success("로그인 성공! 이제 '결과 보기' 메뉴를 이용할 수 있습니다.")
         else:
             st.error("비밀번호가 틀렸습니다.")
 
@@ -88,9 +88,12 @@ def admin_login():
 st.title("세션1 AI디지털 시대 학교경영")
 st.title("설문조사")
 
-menu = ["메인", "사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)"]
+# 기본 메뉴
+menu = ["메인", "사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)", "관리자 페이지"]
+
+# 로그인 성공 시 '결과 보기' 추가
 if st.session_state["logged_in"]:
-    menu.append("결과 보기")  # 로그인 성공 시 결과 보기 메뉴 추가
+    menu.append("결과 보기")
 
 choice = st.sidebar.selectbox("메뉴 선택", menu)
 
@@ -106,6 +109,12 @@ elif choice in ["사전설문", "1번 질문(김태원 대표님)", "2번 질문
         if submitted:
             save_data(choice, name, answer)
             st.success("설문이 저장되었습니다!")
+
+elif choice == "관리자 페이지":
+    if st.session_state["logged_in"]:
+        st.info("이미 로그인 상태입니다. '결과 보기' 메뉴를 이용하세요.")
+    else:
+        admin_login()
 
 elif choice == "결과 보기":
     if st.session_state["logged_in"]:
