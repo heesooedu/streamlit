@@ -20,6 +20,13 @@ def save_data(survey, name, answer):
     data = pd.concat([data, new_data], ignore_index=True)
     data.to_csv(DATA_FILE, index=False)
 
+# 데이터 초기화 함수
+def delete_all_data():
+    if os.path.exists(DATA_FILE):
+        os.remove(DATA_FILE)
+    # 빈 파일 생성
+    pd.DataFrame(columns=["Survey", "Name", "Answer"]).to_csv(DATA_FILE, index=False)
+
 # 워드클라우드 생성 함수
 def generate_wordcloud(text):
     font_path = "Hakgyoansim Nadeuri TTF B.ttf"  # 폰트 파일 이름
@@ -71,3 +78,9 @@ elif choice == "결과 보기":
             file_name="survey_data.csv",
             mime="text/csv",
         )
+    
+    # 데이터 초기화 버튼
+    st.subheader("응답 데이터 초기화")
+    if st.button("모든 응답 삭제"):
+        delete_all_data()
+        st.warning("모든 데이터가 삭제되었습니다!")
