@@ -11,6 +11,8 @@ ADMIN_PASSWORD = "admin123"  # 관리자 비밀번호
 # 세션 상태 초기화
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
+if "current_page" not in st.session_state:
+    st.session_state["current_page"] = "메인"
 
 # 데이터 불러오기 함수
 def load_data():
@@ -45,7 +47,8 @@ def admin_login():
     if st.button("로그인"):
         if password == ADMIN_PASSWORD:
             st.session_state["logged_in"] = True
-            st.success("로그인 성공!")
+            st.session_state["current_page"] = "관리자 페이지"
+            st.success("로그인 성공! 페이지가 전환됩니다.")
         else:
             st.error("비밀번호가 틀렸습니다.")
 
@@ -86,16 +89,11 @@ def admin_page():
         st.warning("모든 데이터가 삭제되었습니다!")
 
 # 메인 페이지
-st.title("세션1 AI디지털 시대 학교경영")
-st.title("설문조사")
-
-menu = ["메인", "사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)", "관리자 페이지"]
-choice = st.sidebar.selectbox("메뉴 선택", menu)
-
-if choice == "메인":
+def main_page():
     st.subheader("좌측 사이드바에서 설문을 선택하세요.")
 
-elif choice in ["사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)"]:
+# 설문조사 페이지
+def survey_page(choice):
     st.subheader(f"{choice} 페이지")
     with st.form(f"{choice}_form"):
         name = st.text_input("이름")
@@ -105,8 +103,19 @@ elif choice in ["사전설문", "1번 질문(김태원 대표님)", "2번 질문
             save_data(choice, name, answer)
             st.success("설문이 저장되었습니다!")
 
+# 앱 실행
+menu = ["메인", "사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)", "관리자 페이지"]
+if st.session_state["logged_in"]:
+    menu.remove("관리자 페이지")  # 로그인 후에는 관리자 페이지를 별도 선택할 필요 없음
+choice = st.sidebar.selectbox("메뉴 선택", menu)
+
+# 페이지 라우팅
+if st.session_state["logged_in"] and st.session_state["current_page"] == "관리자 페이지":
+    admin_page()
 elif choice == "관리자 페이지":
-    if st.session_state["logged_in"]:
-        admin_page()
+    admin_login()
+else:
+    if choice == "메인":
+        main_page()
     else:
-        admin_login()
+        survey_page(choice)
