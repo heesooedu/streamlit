@@ -27,7 +27,8 @@ def generate_wordcloud(text):
     return wordcloud
 
 # 메인 페이지
-st.title("세션1 AI디지털 시대 학교경영 설문조사")
+st.title("세션1 AI디지털 시대 학교경영")
+st.title("설문조사")
 
 menu = ["메인", "사전설문", "2번 설문", "3번 설문", "4번 설문", "결과 보기"]
 choice = st.sidebar.selectbox("메뉴 선택", menu)
