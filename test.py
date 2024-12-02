@@ -6,6 +6,11 @@ import os
 
 # 데이터 저장용 파일
 DATA_FILE = "survey_data.csv"
+ADMIN_PASSWORD = "admin123"  # 관리자 비밀번호
+
+# 세션 상태 초기화
+if "logged_in" not in st.session_state:
+    st.session_state["logged_in"] = False
 
 # 데이터 불러오기 함수
 def load_data():
@@ -33,27 +38,19 @@ def generate_wordcloud(text):
     wordcloud = WordCloud(font_path=font_path, width=800, height=400, background_color="white").generate(text)
     return wordcloud
 
-# 메인 페이지
-st.title("세션1 AI디지털 시대 학교경영")
-st.title("설문조사")
+# 관리자 로그인 페이지
+def admin_login():
+    st.subheader("관리자 로그인")
+    password = st.text_input("비밀번호를 입력하세요", type="password")
+    if st.button("로그인"):
+        if password == ADMIN_PASSWORD:
+            st.session_state["logged_in"] = True
+            st.success("로그인 성공!")
+        else:
+            st.error("비밀번호가 틀렸습니다.")
 
-menu = ["메인", "사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)", "결과 보기"]
-choice = st.sidebar.selectbox("메뉴 선택", menu)
-
-if choice == "메인":
-    st.subheader("좌측 사이드바에서 설문을 선택하세요.")
-
-elif choice in ["사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)"]:
-    st.subheader(f"{choice} 페이지")
-    with st.form(f"{choice}_form"):
-        name = st.text_input("이름")
-        answer = st.text_area("질문에 대한 답변을 입력하세요")
-        submitted = st.form_submit_button("제출")
-        if submitted:
-            save_data(choice, name, answer)
-            st.success("설문이 저장되었습니다!")
-
-elif choice == "결과 보기":
+# 결과 보기 페이지
+def admin_page():
     st.subheader("설문조사 결과")
     data = load_data()
 
@@ -69,18 +66,47 @@ elif choice == "결과 보기":
         else:
             st.write("데이터가 없습니다.")
 
-    if st.checkbox("2, 3, 4번 설문 데이터 보기"):
-        st.dataframe(data)
-        csv = data.to_csv(index=False)
-        st.download_button(
-            label="CSV 다운로드",
-            data=csv,
-            file_name="survey_data.csv",
-            mime="text/csv",
-        )
-    
+    for question in ["2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)", "4번 질문(정진선 교장님)"]:
+        st.subheader(f"{question} 데이터")
+        question_data = data[data["Survey"] == question]
+        if not question_data.empty:
+            # 긴 답변 줄바꿈 설정
+            st.table(
+                question_data.style.set_properties(
+                    subset=["Answer"], **{"white-space": "pre-wrap"}
+                )
+            )
+        else:
+            st.write("데이터가 없습니다.")
+
     # 데이터 초기화 버튼
     st.subheader("응답 데이터 초기화")
     if st.button("모든 응답 삭제"):
         delete_all_data()
         st.warning("모든 데이터가 삭제되었습니다!")
+
+# 메인 페이지
+st.title("세션1 AI디지털 시대 학교경영")
+st.title("설문조사")
+
+menu = ["메인", "사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)", "관리자 페이지"]
+choice = st.sidebar.selectbox("메뉴 선택", menu)
+
+if choice == "메인":
+    st.subheader("좌측 사이드바에서 설문을 선택하세요.")
+
+elif choice in ["사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)"]:
+    st.subheader(f"{choice} 페이지")
+    with st.form(f"{choice}_form"):
+        name = st.text_input("이름")
+        answer = st.text_area("질문에 대한 답변을 입력하세요")
+        submitted = st.form_submit_button("제출")
+        if submitted:
+            save_data(choice, name, answer)
+            st.success("설문이 저장되었습니다!")
+
+elif choice == "관리자 페이지":
+    if st.session_state["logged_in"]:
+        admin_page()
+    else:
+        admin_login()
