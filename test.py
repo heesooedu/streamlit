@@ -7,18 +7,24 @@ import re  # 정규표현식 사용
 # 데이터 저장용 파일
 DATA_FILE = "survey_data.csv"
 
-# 데이터 불러오기 함수
 def load_data():
-    if os.path.exists(DATA_FILE):
-        return pd.read_csv(DATA_FILE)
+    current_dir = os.path.dirname(os.path.abspath(__file__))  # 현재 파일의 디렉토리
+    data_file_path = os.path.join(current_dir, DATA_FILE)     # 파일 경로 생성
+    if os.path.exists(data_file_path):
+        return pd.read_csv(data_file_path)
     return pd.DataFrame(columns=["Survey", "Name", "Answer"])
 
-# 데이터 저장 함수
+
 def save_data(survey, name, answer):
     data = load_data()
     new_data = pd.DataFrame({"Survey": [survey], "Name": [name], "Answer": [answer]})
     data = pd.concat([data, new_data], ignore_index=True)
-    data.to_csv(DATA_FILE, index=False)
+
+    # 파일 저장
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    data_file_path = os.path.join(current_dir, DATA_FILE)
+    data.to_csv(data_file_path, index=False)
+
 
 # 한글 단어 추출 함수
 def extract_nouns(text):
