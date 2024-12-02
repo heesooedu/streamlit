@@ -20,8 +20,14 @@ def save_data(survey, name, answer):
     data = pd.concat([data, new_data], ignore_index=True)
     data.to_csv(DATA_FILE, index=False)
 
+# 워드클라우드 생성 함수
+def generate_wordcloud(text):
+    font_path = "HakgyoansimNadeuriTTFB.ttf"  # 폰트 파일 이름
+    wordcloud = WordCloud(font_path=font_path, width=800, height=400, background_color="white").generate(text)
+    return wordcloud
+
 # 메인 페이지
-st.title("설문조사 웹페이지")
+st.title("설문조사와 워드클라우드 웹앱")
 
 menu = ["메인", "사전설문", "2번 설문", "3번 설문", "4번 설문", "결과 보기"]
 choice = st.sidebar.selectbox("메뉴 선택", menu)
@@ -48,7 +54,7 @@ elif choice == "결과 보기":
         survey1_data = data[data["Survey"] == "사전설문"]["Answer"].dropna()
         text = " ".join(survey1_data)
         if text:
-            wordcloud = WordCloud(font_path=None, width=800, height=400).generate(text)
+            wordcloud = generate_wordcloud(text)
             plt.figure(figsize=(10, 5))
             plt.imshow(wordcloud, interpolation="bilinear")
             plt.axis("off")
