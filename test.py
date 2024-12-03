@@ -84,6 +84,12 @@ def admin_page():
     st.subheader("설문조사 결과")
     data = load_data()
 
+    # 데이터가 비어있거나 열이 부족한 경우 처리
+    if "Name" not in data.columns:
+        data["Name"] = ""
+    if "Answer" not in data.columns:
+        data["Answer"] = ""
+
     if not data.empty:
         visualize_survey_results(data)
 
