@@ -16,12 +16,12 @@ if "logged_in" not in st.session_state:
 def load_data():
     if os.path.exists(DATA_FILE):
         return pd.read_csv(DATA_FILE)
-    return pd.DataFrame(columns=["Survey", "Answer"])
+    return pd.DataFrame(columns=["Survey", "Name", "Answer"])
 
 # 데이터 저장 함수
-def save_data(survey, answer):
+def save_data(survey, name, answer):
     data = load_data()
-    new_data = pd.DataFrame({"Survey": [survey], "Answer": [answer]})
+    new_data = pd.DataFrame({"Survey": [survey], "Name": [name], "Answer": [answer]})
     data = pd.concat([data, new_data], ignore_index=True)
     data.to_csv(DATA_FILE, index=False)
 
@@ -30,7 +30,7 @@ def delete_all_data():
     if os.path.exists(DATA_FILE):
         os.remove(DATA_FILE)
     # 빈 파일 생성
-    pd.DataFrame(columns=["Survey", "Answer"]).to_csv(DATA_FILE, index=False)
+    pd.DataFrame(columns=["Survey", "Name", "Answer"]).to_csv(DATA_FILE, index=False)
 
 # 한글 폰트 설정
 def set_korean_font():
@@ -87,9 +87,9 @@ def admin_page():
     if not data.empty:
         visualize_survey_results(data)
 
-    for question in ["2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)", "4번 질문(정진선 교장님)"]:
+    for question in ["1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)"]:
         st.subheader(f"{question} 데이터")
-        question_data = data[data["Survey"] == question][["Answer"]]  # Survey 열 제거
+        question_data = data[data["Survey"] == question][["Name", "Answer"]]  # Name, Answer만 표시
         if not question_data.empty:
             st.table(
                 question_data.style.set_properties(
@@ -160,16 +160,17 @@ elif choice == "사전설문":
         if selected_option == "8. 기타 (직접 입력)" and other_answer:
             answer = f"{selected_option}: {other_answer}"
         
-        save_data("사전설문", answer)
+        save_data("사전설문", "", answer)  # 이름 없음
         st.success("설문이 저장되었습니다!")
 
 elif choice in ["1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)"]:
     st.subheader(f"{choice} 페이지")
     with st.form(f"{choice}_form"):
+        name = st.text_input("이름")
         answer = st.text_area("질문에 대한 답변을 입력하세요")
         submitted = st.form_submit_button("제출")
         if submitted:
-            save_data(choice, answer)
+            save_data(choice, name, answer)
             st.success("설문이 저장되었습니다!")
 
 elif choice == "관리자 페이지":
