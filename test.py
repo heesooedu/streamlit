@@ -15,6 +15,9 @@ ADMIN_PASSWORD = "admin123"  # 관리자 비밀번호
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
 
+if "menu_choice" not in st.session_state:
+    st.session_state["menu_choice"] = "메인"
+
 # 데이터 불러오기 함수
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -43,7 +46,6 @@ def set_custom_korean_font():
         raise FileNotFoundError(f"폰트 파일을 찾을 수 없습니다: {font_path}")
     
     custom_font = FontProperties(fname=font_path)
-    print("폰트 이름:", custom_font.get_name())  # 폰트 이름 출력
     rc("font", family=custom_font.get_name())
 
 # 사전설문 결과 시각화
@@ -155,7 +157,8 @@ menu = ["메인", "사전설문", "1번 질문(김태원 대표님)", "2번 질�
 if st.session_state["logged_in"]:
     menu.append("결과 보기")
 
-choice = st.sidebar.selectbox("메뉴 선택", menu)
+choice = st.sidebar.selectbox("메뉴 선택", menu, key="menu_choice")
+
 # 선택 후 사이드바 닫기
 if st.session_state.get("menu_choice") != choice:
     st.session_state["menu_choice"] = choice
