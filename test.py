@@ -156,6 +156,10 @@ if st.session_state["logged_in"]:
     menu.append("결과 보기")
 
 choice = st.sidebar.selectbox("메뉴 선택", menu)
+# 선택 후 사이드바 닫기
+if st.session_state.get("menu_choice") != choice:
+    st.session_state["menu_choice"] = choice
+    st.experimental_rerun()
 
 if choice == "메인":
     st.subheader("좌측 상단 사이드바(>)에서 설문을 선택하세요.")
