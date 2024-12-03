@@ -35,14 +35,16 @@ def delete_all_data():
     # 빈 파일 생성
     pd.DataFrame(columns=["Survey", "Name", "Answer"]).to_csv(DATA_FILE, index=False)
 
-
-
+# 한글 폰트 설정 함수
 def set_custom_korean_font():
-    # 현재 파일과 동일한 디렉토리에 있는 폰트 경로
+    # 현재 디렉토리에 있는 폰트 경로
     font_path = os.path.join(os.path.dirname(__file__), "Hakgyoansim Nadeuri TTF B.ttf")
+    if not os.path.exists(font_path):
+        raise FileNotFoundError(f"폰트 파일을 찾을 수 없습니다: {font_path}")
+    
     custom_font = FontProperties(fname=font_path)
+    print("폰트 이름:", custom_font.get_name())  # 폰트 이름 출력
     rc("font", family=custom_font.get_name())
-
 
 # 사전설문 결과 시각화
 def visualize_survey_results(data):
@@ -112,6 +114,18 @@ def admin_page():
         else:
             st.write("데이터가 없습니다.")
 
+    # "소감" 데이터 표시
+    st.subheader("소감 데이터")
+    impression_data = data[data["Survey"] == "소감"][["Name", "Answer"]]
+    if not impression_data.empty:
+        st.table(
+            impression_data.style.set_properties(
+                subset=["Answer"], **{"white-space": "pre-wrap"}
+            )
+        )
+    else:
+        st.write("소감 데이터가 없습니다.")
+
     # 데이터 초기화 버튼
     st.markdown("<br><br>", unsafe_allow_html=True)  # 버튼 아래로 떨어뜨리기
     st.subheader("응답 데이터 초기화")
@@ -135,7 +149,7 @@ st.title("세션1 AI디지털 시대 학교경영")
 st.title("설문조사")
 
 # 기본 메뉴
-menu = ["메인", "사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)", "관리자 페이지"]
+menu = ["메인", "사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)", "소감", "관리자 페이지"]
 
 # 로그인 성공 시 '결과 보기' 추가
 if st.session_state["logged_in"]:
@@ -185,6 +199,16 @@ elif choice in ["1번 질문(김태원 대표님)", "2번 질문(이준호 교�
         if submitted:
             save_data(choice, name, answer)
             st.success("설문이 저장되었습니다!")
+
+elif choice == "소감":
+    st.subheader("소감 페이지")
+    with st.form("소감_form"):
+        name = st.text_input("이름")
+        impression = st.text_area("소감을 입력하세요")
+        submitted = st.form_submit_button("제출")
+        if submitted:
+            save_data("소감", name, impression)
+            st.success("소감이 저장되었습니다!")
 
 elif choice == "관리자 페이지":
     if st.session_state["logged_in"]:
