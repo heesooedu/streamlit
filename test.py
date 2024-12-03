@@ -176,7 +176,7 @@ elif choice == "사전설문":
         """
         <style>
         div[data-testid="stRadio"] > label {
-            font-size: 23px;  /* 라디오 버튼의 글자 크기 */
+            font-size: 28px;  /* 라디오 버튼의 글자 크기 */
         }
         </style>
         """,
