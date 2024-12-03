@@ -176,7 +176,7 @@ elif choice == "사전설문":
         """
         <style>
         .custom-radio input[type="radio"] + div {
-            font-size: 25px; /* 글자 크기 설정 */
+            font-size: 18px; /* 글자 크기 설정 */
         }
         </style>
         """,
