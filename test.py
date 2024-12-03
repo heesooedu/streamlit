@@ -35,16 +35,14 @@ def delete_all_data():
     # 빈 파일 생성
     pd.DataFrame(columns=["Survey", "Name", "Answer"]).to_csv(DATA_FILE, index=False)
 
-# 한글 폰트 설정 함수
+
+
 def set_custom_korean_font():
-    # 깃허브 레포지토리에 올라간 폰트 파일 경로
-    font_path = "./Hakgyoansim Nadeuri TTF B.ttf"
-    
-    # FontProperties 객체 생성
+    # 현재 파일과 동일한 디렉토리에 있는 폰트 경로
+    font_path = os.path.join(os.path.dirname(__file__), "Hakgyoansim Nadeuri TTF B.ttf")
     custom_font = FontProperties(fname=font_path)
-    
-    # matplotlib에 폰트 설정
     rc("font", family=custom_font.get_name())
+
 
 # 사전설문 결과 시각화
 def visualize_survey_results(data):
