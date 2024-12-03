@@ -32,8 +32,16 @@ def delete_all_data():
     # 빈 파일 생성
     pd.DataFrame(columns=["Survey", "Answer"]).to_csv(DATA_FILE, index=False)
 
+# 한글 폰트 설정
+def set_korean_font():
+    from matplotlib import rc
+    rc("font", family="NanumMyeongjo")  # 사용 가능한 한글 폰트 설정 (예: NanumMyeongjo)
+
 # 사전설문 결과 시각화
 def visualize_survey_results(data):
+    # 한글 폰트 설정
+    set_korean_font()
+
     # 사전설문 데이터 필터링
     survey_data = data[data["Survey"] == "사전설문"]
     
@@ -50,7 +58,7 @@ def visualize_survey_results(data):
     predefined_counts = Counter(answer for answer in survey_data["Answer"] if answer in predefined_answers)
 
     # 기타 응답 필터링
-    other_responses = survey_data[~survey_data["Answer"].isin(predefined_answers)]["Answer"].tolist()
+    other_responses = survey_data[~survey_data["Answer"].isin(predefined_answers)][["Answer"]]
 
     # 파이차트 데이터
     labels = list(predefined_counts.keys())
@@ -64,11 +72,10 @@ def visualize_survey_results(data):
     ax.axis("equal")  # 파이차트를 원형으로 유지
     st.pyplot(fig)
 
-    # 기타 응답 표시
-    st.subheader("기타 응답")
-    if other_responses:
-        for idx, response in enumerate(other_responses, 1):
-            st.write(f"{idx}. {response}")
+    # 기타 응답 표로 표시
+    st.subheader("기타 응답 (표 형식)")
+    if not other_responses.empty:
+        st.table(other_responses)
     else:
         st.write("기타 응답이 없습니다.")
 
@@ -82,7 +89,7 @@ def admin_page():
 
     for question in ["2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)", "4번 질문(정진선 교장님)"]:
         st.subheader(f"{question} 데이터")
-        question_data = data[data["Survey"] == question]
+        question_data = data[data["Survey"] == question][["Answer"]]  # Survey 열 제거
         if not question_data.empty:
             st.table(
                 question_data.style.set_properties(
@@ -93,6 +100,7 @@ def admin_page():
             st.write("데이터가 없습니다.")
 
     # 데이터 초기화 버튼
+    st.markdown("<br><br>", unsafe_allow_html=True)  # 버튼 아래로 떨어뜨리기
     st.subheader("응답 데이터 초기화")
     if st.button("모든 응답 삭제"):
         delete_all_data()
@@ -158,7 +166,6 @@ elif choice == "사전설문":
 elif choice in ["1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)"]:
     st.subheader(f"{choice} 페이지")
     with st.form(f"{choice}_form"):
-        name = st.text_input("이름")
         answer = st.text_area("질문에 대한 답변을 입력하세요")
         submitted = st.form_submit_button("제출")
         if submitted:
