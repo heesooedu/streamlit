@@ -3,6 +3,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from collections import Counter
 import os
+import platform
+from matplotlib import rc
 
 # 데이터 저장용 파일
 DATA_FILE = "survey_data.csv"
@@ -32,10 +34,14 @@ def delete_all_data():
     # 빈 파일 생성
     pd.DataFrame(columns=["Survey", "Name", "Answer"]).to_csv(DATA_FILE, index=False)
 
-# 한글 폰트 설정
+# 한글 폰트 설정 함수
 def set_korean_font():
-    from matplotlib import rc
-    rc("font", family="NanumMyeongjo")  # 사용 가능한 한글 폰트 설정 (예: NanumMyeongjo)
+    if platform.system() == "Windows":
+        rc("font", family="Malgun Gothic")
+    elif platform.system() == "Darwin":  # macOS
+        rc("font", family="Apple SD Gothic Neo")
+    else:  # Linux
+        rc("font", family="NanumGothic")
 
 # 사전설문 결과 시각화
 def visualize_survey_results(data):
