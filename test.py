@@ -175,8 +175,9 @@ elif choice == "사전설문":
     st.markdown(
         """
         <style>
-        div[data-testid="stRadio"] > label {
-            font-size: 18px;  /* 라디오 버튼의 글자 크기 */
+        /* 라디오 버튼 텍스트 크기 */
+        div[data-testid="stRadio"] label {
+            font-size: 23px;
         }
         </style>
         """,
@@ -208,6 +209,7 @@ elif choice == "사전설문":
         
         save_data("사전설문", "", answer)  # 이름 없음
         st.success("설문이 저장되었습니다!")
+
 
 
 elif choice in ["1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)"]:
