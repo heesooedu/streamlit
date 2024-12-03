@@ -5,6 +5,7 @@ from collections import Counter
 import os
 import platform
 from matplotlib import rc
+from matplotlib.font_manager import FontProperties
 
 # 데이터 저장용 파일
 DATA_FILE = "survey_data.csv"
@@ -35,18 +36,20 @@ def delete_all_data():
     pd.DataFrame(columns=["Survey", "Name", "Answer"]).to_csv(DATA_FILE, index=False)
 
 # 한글 폰트 설정 함수
-def set_korean_font():
-    if platform.system() == "Windows":
-        rc("font", family="Malgun Gothic")
-    elif platform.system() == "Darwin":  # macOS
-        rc("font", family="Apple SD Gothic Neo")
-    else:  # Linux
-        rc("font", family="NanumGothic")
+def set_custom_korean_font():
+    # 깃허브 레포지토리에 올라간 폰트 파일 경로
+    font_path = "./Hakgyoansim Nadeuri TTF B.ttf"
+    
+    # FontProperties 객체 생성
+    custom_font = FontProperties(fname=font_path)
+    
+    # matplotlib에 폰트 설정
+    rc("font", family=custom_font.get_name())
 
 # 사전설문 결과 시각화
 def visualize_survey_results(data):
-    # 한글 폰트 설정
-    set_korean_font()
+    # 사용자 정의 폰트 설정
+    set_custom_korean_font()
 
     # 사전설문 데이터 필터링
     survey_data = data[data["Survey"] == "사전설문"]
