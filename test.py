@@ -175,8 +175,8 @@ elif choice == "사전설문":
     st.markdown(
         """
         <style>
-        .custom-radio input[type="radio"] + div {
-            font-size: 23px; /* 글자 크기 설정 */
+        div[data-testid="stRadio"] > label {
+            font-size: 23px;  /* 라디오 버튼의 글자 크기 */
         }
         </style>
         """,
@@ -194,14 +194,7 @@ elif choice == "사전설문":
         "8. 기타 (직접 입력)"
     ]
 
-    # CSS를 적용하기 위해 key를 설정
-    selected_option = st.radio(
-        "다음 중 하나를 선택하세요", 
-        options, 
-        key="custom_radio", 
-        format_func=lambda x: f"<span class='custom-radio'>{x}</span>"  # 클래스 추가
-    )
-    
+    selected_option = st.radio("다음 중 하나를 선택하세요", options)
     other_answer = ""
 
     # "8번 기타"를 선택한 경우 즉시 주관식 입력 필드 표시
@@ -215,6 +208,7 @@ elif choice == "사전설문":
         
         save_data("사전설문", "", answer)  # 이름 없음
         st.success("설문이 저장되었습니다!")
+
 
 elif choice in ["1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)"]:
     st.subheader(f"{choice} 페이지")
