@@ -170,7 +170,19 @@ if choice == "메인":
 elif choice == "사전설문":
     st.subheader("사전설문 페이지")
     st.write("**학교에서 디지털 교육 혁신을 추진하는 과정에서 가장 큰 도전 과제는 무엇이라고 생각하십니까?**")
-    
+
+    # CSS 스타일링 적용
+    st.markdown(
+        """
+        <style>
+        .custom-radio input[type="radio"] + div {
+            font-size: 18px; /* 글자 크기 설정 */
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
     options = [
         "1. 예산 및 자원 부족",
         "2. 교사의 디지털 역량 강화 어려움",
@@ -181,8 +193,15 @@ elif choice == "사전설문":
         "7. 교육 혁신에 대한 구체적인 성공 사례 부족",
         "8. 기타 (직접 입력)"
     ]
+
+    # CSS를 적용하기 위해 key를 설정
+    selected_option = st.radio(
+        "다음 중 하나를 선택하세요", 
+        options, 
+        key="custom_radio", 
+        format_func=lambda x: f"<span class='custom-radio'>{x}</span>"  # 클래스 추가
+    )
     
-    selected_option = st.radio("다음 중 하나를 선택하세요", options)
     other_answer = ""
 
     # "8번 기타"를 선택한 경우 즉시 주관식 입력 필드 표시
