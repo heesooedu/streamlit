@@ -15,9 +15,6 @@ ADMIN_PASSWORD = "admin123"  # 관리자 비밀번호
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
 
-if "menu_choice" not in st.session_state:
-    st.session_state["menu_choice"] = "메인"
-
 # 데이터 불러오기 함수
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -40,12 +37,13 @@ def delete_all_data():
 
 # 한글 폰트 설정 함수
 def set_custom_korean_font():
-    # 현재 디렉토리에 있는 폰트 경로
-    font_path = os.path.join(os.path.dirname(__file__), "Hakgyoansim Nadeuri TTF B.ttf")
-    if not os.path.exists(font_path):
-        raise FileNotFoundError(f"폰트 파일을 찾을 수 없습니다: {font_path}")
+    # 깃허브 레포지토리에 올라간 폰트 파일 경로
+    font_path = "./Hakgyoansim Nadeuri TTF B.ttf"
     
+    # FontProperties 객체 생성
     custom_font = FontProperties(fname=font_path)
+    
+    # matplotlib에 폰트 설정
     rc("font", family=custom_font.get_name())
 
 # 사전설문 결과 시각화
@@ -116,18 +114,6 @@ def admin_page():
         else:
             st.write("데이터가 없습니다.")
 
-    # "소감" 데이터 표시
-    st.subheader("소감 데이터")
-    impression_data = data[data["Survey"] == "소감"][["Name", "Answer"]]
-    if not impression_data.empty:
-        st.table(
-            impression_data.style.set_properties(
-                subset=["Answer"], **{"white-space": "pre-wrap"}
-            )
-        )
-    else:
-        st.write("소감 데이터가 없습니다.")
-
     # 데이터 초기화 버튼
     st.markdown("<br><br>", unsafe_allow_html=True)  # 버튼 아래로 떨어뜨리기
     st.subheader("응답 데이터 초기화")
@@ -151,18 +137,13 @@ st.title("세션1 AI디지털 시대 학교경영")
 st.title("설문조사")
 
 # 기본 메뉴
-menu = ["메인", "사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)", "소감", "관리자 페이지"]
+menu = ["메인", "사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)", "관리자 페이지"]
 
 # 로그인 성공 시 '결과 보기' 추가
 if st.session_state["logged_in"]:
     menu.append("결과 보기")
 
-choice = st.sidebar.selectbox("메뉴 선택", menu, key="menu_choice")
-
-# 선택 후 사이드바 닫기
-if st.session_state.get("menu_choice") != choice:
-    st.session_state["menu_choice"] = choice
-    st.experimental_rerun()
+choice = st.sidebar.selectbox("메뉴 선택", menu)
 
 if choice == "메인":
     st.subheader("좌측 상단 사이드바(>)에서 설문을 선택하세요.")
@@ -170,21 +151,8 @@ if choice == "메인":
 elif choice == "사전설문":
     st.subheader("사전설문 페이지")
     st.write("**학교에서 디지털 교육 혁신을 추진하는 과정에서 가장 큰 도전 과제는 무엇이라고 생각하십니까?**")
-
-# CSS 스타일링 적용
-st.markdown(
-    """
-    <style>
-    html {
-        font-size: 23px !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-
-options = [
+    
+    options = [
         "1. 예산 및 자원 부족",
         "2. 교사의 디지털 역량 강화 어려움",
         "3. AI 및 디지털 콘텐츠의 부족과 적절한 선택의 어려움",
@@ -194,23 +162,21 @@ options = [
         "7. 교육 혁신에 대한 구체적인 성공 사례 부족",
         "8. 기타 (직접 입력)"
     ]
-
+    
     selected_option = st.radio("다음 중 하나를 선택하세요", options)
     other_answer = ""
 
     # "8번 기타"를 선택한 경우 즉시 주관식 입력 필드 표시
     if selected_option == "8. 기타 (직접 입력)":
         other_answer = st.text_area("기타 의견을 입력하세요")
-
+    
     if st.button("제출"):
         answer = selected_option
         if selected_option == "8. 기타 (직접 입력)" and other_answer:
             answer = f"{selected_option}: {other_answer}"
-
+        
         save_data("사전설문", "", answer)  # 이름 없음
         st.success("설문이 저장되었습니다!")
-
-
 
 elif choice in ["1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)"]:
     st.subheader(f"{choice} 페이지")
@@ -221,16 +187,6 @@ elif choice in ["1번 질문(김태원 대표님)", "2번 질문(이준호 교�
         if submitted:
             save_data(choice, name, answer)
             st.success("설문이 저장되었습니다!")
-
-elif choice == "소감":
-    st.subheader("소감 페이지")
-    with st.form("소감_form"):
-        name = st.text_input("이름")
-        impression = st.text_area("소감을 입력하세요")
-        submitted = st.form_submit_button("제출")
-        if submitted:
-            save_data("소감", name, impression)
-            st.success("소감이 저장되었습니다!")
 
 elif choice == "관리자 페이지":
     if st.session_state["logged_in"]:
