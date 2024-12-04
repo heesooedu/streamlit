@@ -171,18 +171,18 @@ elif choice == "사전설문":
     st.subheader("사전설문 페이지")
     st.write("**학교에서 디지털 교육 혁신을 추진하는 과정에서 가장 큰 도전 과제는 무엇이라고 생각하십니까?**")
 
-    # CSS 스타일링 적용
-    st.markdown(
-        """
-        <style>
-        /* 라디오 버튼 텍스트 크기 조절 */
-        div[data-baseweb="radio"] > label p {
-            font-size: 23px !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+# CSS 스타일링 적용
+st.markdown(
+    """
+    <style>
+    html {
+        font-size: 23px !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 
     options = [
         "1. 예산 및 자원 부족",
