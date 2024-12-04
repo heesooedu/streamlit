@@ -175,9 +175,9 @@ elif choice == "사전설문":
     st.markdown(
         """
         <style>
-        /* 라디오 버튼 텍스트 크기 */
-        div[data-testid="stRadio"] label {
-            font-size: 23px;
+        /* 라디오 버튼 텍스트 크기 조절 */
+        div[data-baseweb="radio"] label {
+            font-size: 23px !important;
         }
         </style>
         """,
@@ -201,12 +201,12 @@ elif choice == "사전설문":
     # "8번 기타"를 선택한 경우 즉시 주관식 입력 필드 표시
     if selected_option == "8. 기타 (직접 입력)":
         other_answer = st.text_area("기타 의견을 입력하세요")
-    
+
     if st.button("제출"):
         answer = selected_option
         if selected_option == "8. 기타 (직접 입력)" and other_answer:
             answer = f"{selected_option}: {other_answer}"
-        
+
         save_data("사전설문", "", answer)  # 이름 없음
         st.success("설문이 저장되었습니다!")
 
