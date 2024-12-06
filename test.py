@@ -73,26 +73,20 @@ def visualize_survey_results(data):
     # 기타 응답 필터링
     other_responses = survey_data[~survey_data["Answer"].isin(predefined_answers)][["Answer"]]
 
+    # 파이차트 데이터
+    colors = plt.cm.Paired.colors[:len(labels)]  # 자동 색상 설정
+
     # 파이차트 시각화
     st.subheader("사전설문 응답 비율")
     fig, ax = plt.subplots()
-    ax.pie(
-        sizes, 
-        labels=labels, 
-        autopct="%1.1f%%", 
-        startangle=90, 
-        colors=plt.cm.Paired.colors[:len(labels)]
-    )
+    ax.pie(sizes, labels=labels, autopct="%1.1f%%", startangle=90, colors=colors)
     ax.axis("equal")  # 파이차트를 원형으로 유지
     st.pyplot(fig)
 
-    # 항목 설명 표로 표시
-    st.subheader("항목 설명")
-    item_description = pd.DataFrame({
-        "번호": [i.split(".")[0] for i in predefined_answers],
-        "설명": [i.split(".")[1].strip() for i in predefined_answers],
-    })
-    st.table(item_description)
+    # 응답 항목 설명
+    st.subheader("응답 항목 설명")
+    explanation_data = pd.DataFrame({"번호": [a.split(".")[0] for a in predefined_answers], "내용": predefined_answers})
+    st.table(explanation_data)
 
     # 기타 응답 표로 표시
     st.subheader("기타 응답 (표 형식)")
@@ -100,7 +94,6 @@ def visualize_survey_results(data):
         st.table(other_responses)
     else:
         st.write("기타 응답이 없습니다.")
-
 
 # 결과 보기 페이지
 def admin_page():
@@ -128,6 +121,18 @@ def admin_page():
         else:
             st.write("데이터가 없습니다.")
 
+    # "3번 질문" 아래 소감 표시
+    st.subheader("소감 데이터")
+    impression_data = data[data["Survey"] == "소감"][["Name", "Answer"]]
+    if not impression_data.empty:
+        st.table(
+            impression_data.style.set_properties(
+                subset=["Answer"], **{"white-space": "pre-wrap"}
+            )
+        )
+    else:
+        st.write("소감 데이터가 없습니다.")
+
     # 데이터 초기화 버튼
     st.markdown("<br><br>", unsafe_allow_html=True)  # 버튼 아래로 떨어뜨리기
     st.subheader("응답 데이터 초기화")
@@ -151,7 +156,7 @@ st.title("세션1 AI디지털 시대 학교경영")
 st.title("설문조사")
 
 # 기본 메뉴
-menu = ["메인", "사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)", "관리자 페이지"]
+menu = ["메인", "사전설문", "1번 질문(김태원 대표님)", "2번 질문(이준호 교장님)", "3번 질문(정진선 교장님)", "소감", "관리자 페이지"]
 
 # 로그인 성공 시 '결과 보기' 추가
 if st.session_state["logged_in"]:
@@ -201,6 +206,16 @@ elif choice in ["1번 질문(김태원 대표님)", "2번 질문(이준호 교�
         if submitted:
             save_data(choice, name, answer)
             st.success("설문이 저장되었습니다!")
+
+elif choice == "소감":
+    st.subheader("소감 페이지")
+    with st.form("소감_form"):
+        name = st.text_input("이름을 입력하세요")
+        answer = st.text_area("소감을 입력하세요")
+        submitted = st.form_submit_button("제출")
+        if submitted:
+            save_data("소감", name, answer)
+            st.success("소감이 저장되었습니다!")
 
 elif choice == "관리자 페이지":
     if st.session_state["logged_in"]:
