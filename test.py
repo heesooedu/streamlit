@@ -66,20 +66,33 @@ def visualize_survey_results(data):
     ]
     predefined_counts = Counter(answer for answer in survey_data["Answer"] if answer in predefined_answers)
 
+    # 번호와 응답을 분리
+    labels = [answer.split(".")[0] for answer in predefined_counts.keys()]
+    sizes = list(predefined_counts.values())
+
     # 기타 응답 필터링
     other_responses = survey_data[~survey_data["Answer"].isin(predefined_answers)][["Answer"]]
-
-    # 파이차트 데이터
-    labels = list(predefined_counts.keys())
-    sizes = list(predefined_counts.values())
-    colors = plt.cm.Paired.colors[:len(labels)]  # 자동 색상 설정
 
     # 파이차트 시각화
     st.subheader("사전설문 응답 비율")
     fig, ax = plt.subplots()
-    ax.pie(sizes, labels=labels, autopct="%1.1f%%", startangle=90, colors=colors)
+    ax.pie(
+        sizes, 
+        labels=labels, 
+        autopct="%1.1f%%", 
+        startangle=90, 
+        colors=plt.cm.Paired.colors[:len(labels)]
+    )
     ax.axis("equal")  # 파이차트를 원형으로 유지
     st.pyplot(fig)
+
+    # 항목 설명 표로 표시
+    st.subheader("항목 설명")
+    item_description = pd.DataFrame({
+        "번호": [i.split(".")[0] for i in predefined_answers],
+        "설명": [i.split(".")[1].strip() for i in predefined_answers],
+    })
+    st.table(item_description)
 
     # 기타 응답 표로 표시
     st.subheader("기타 응답 (표 형식)")
@@ -87,6 +100,7 @@ def visualize_survey_results(data):
         st.table(other_responses)
     else:
         st.write("기타 응답이 없습니다.")
+
 
 # 결과 보기 페이지
 def admin_page():
