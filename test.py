@@ -66,14 +66,13 @@ def visualize_survey_results(data):
     ]
     predefined_counts = Counter(answer for answer in survey_data["Answer"] if answer in predefined_answers)
 
-    # 번호와 응답을 분리
-    labels = [answer.split(".")[0] for answer in predefined_counts.keys()]
-    sizes = list(predefined_counts.values())
-
-    # 기타 응답 필터링
+    # 기타 응답 필터링 및 카운팅
     other_responses = survey_data[~survey_data["Answer"].isin(predefined_answers)][["Answer"]]
+    other_count = len(other_responses)
 
     # 파이차트 데이터
+    labels = [answer.split(".")[0] for answer in predefined_counts.keys()] + ["기타"]
+    sizes = list(predefined_counts.values()) + [other_count]
     colors = plt.cm.Paired.colors[:len(labels)]  # 자동 색상 설정
 
     # 파이차트 시각화
@@ -85,7 +84,8 @@ def visualize_survey_results(data):
 
     # 응답 항목 설명
     st.subheader("응답 항목 설명")
-    explanation_data = pd.DataFrame({"번호": [a.split(".")[0] for a in predefined_answers], "내용": predefined_answers})
+    explanation_data = pd.DataFrame({"번호": [a.split(".")[0] for a in predefined_answers] + ["기타"], 
+                                     "내용": predefined_answers + ["기타 응답"]})
     st.table(explanation_data)
 
     # 기타 응답 표로 표시
