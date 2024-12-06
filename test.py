@@ -62,16 +62,17 @@ def visualize_survey_results(data):
         "4. 교사 및 학부모의 디지털 혁신에 대한 저항",
         "5. 학생의 디지털 윤리 및 책임 교육의 필요성",
         "6. 학생들의 디지털 역량 격차",
-        "7. 교육 혁신에 대한 구체적인 성공 사례 부족"
+        "7. 교육 혁신에 대한 구체적인 성공 사례 부족",
+        "8. 기타"
     ]
-    predefined_counts = Counter(answer for answer in survey_data["Answer"] if answer in predefined_answers)
+    predefined_counts = Counter(answer for answer in survey_data["Answer"] if answer in predefined_answers[:-1])
 
     # 기타 응답 필터링 및 카운팅
     other_responses = survey_data[~survey_data["Answer"].isin(predefined_answers)][["Answer"]]
     other_count = len(other_responses)
 
     # 파이차트 데이터
-    labels = [answer.split(".")[0] for answer in predefined_counts.keys()] + ["기타"]
+    labels = [answer.split(".")[0] for answer in predefined_answers[:-1]] + ["8"]
     sizes = list(predefined_counts.values()) + [other_count]
     colors = plt.cm.Paired.colors[:len(labels)]  # 자동 색상 설정
 
@@ -84,8 +85,8 @@ def visualize_survey_results(data):
 
     # 응답 항목 설명
     st.subheader("응답 항목 설명")
-    explanation_data = pd.DataFrame({"번호": [a.split(".")[0] for a in predefined_answers] + ["기타"], 
-                                     "내용": predefined_answers + ["기타 응답"]})
+    explanation_data = pd.DataFrame({"번호": [a.split(".")[0] for a in predefined_answers], 
+                                     "내용": predefined_answers})
     st.table(explanation_data)
 
     # 기타 응답 표로 표시
