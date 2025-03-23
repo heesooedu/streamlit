@@ -7,6 +7,12 @@ import plotly.express as px
 def load_data():
     file_url = "https://raw.githubusercontent.com/heesooedu/streamlit/refs/heads/main/2022%7E2024.csv"
     df = pd.read_csv(file_url)
+    
+    # '기준년도'를 datetime 형식으로 변환
+    if '기준년도' in df.columns:
+        df['기준년도'] = pd.to_datetime(df['기준년도'], format='%Y')  # '2022', '2023' 형식 처리
+        df = df.sort_values('기준년도')  # 시간 순서 정렬
+
     return df
 
 # 데이터 로드
@@ -28,7 +34,7 @@ st.line_chart(age_population_data)
 # 1인 가구수 시각화
 st.subheader("🔹 1인 가구수 변화")
 one_person_household = wolgae_df[['기준년도', '1인가구수']].set_index('기준년도')
-st.bar_chart(one_person_household)
+st.line_chart(one_person_household)
 
 # 출근 소요시간 미추정 인구수 시각화
 st.subheader("🔹 출근 소요시간 미추정 인구수")
@@ -38,4 +44,3 @@ st.area_chart(unknown_commute_time)
 # 데이터프레임 전체 보기
 st.subheader("🔹 전체 데이터")
 st.dataframe(wolgae_df)
-
