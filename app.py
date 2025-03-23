@@ -1,46 +1,39 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import seaborn as sns
+import matplotlib.pyplot as plt
 
-# 데이터 로드
-@st.cache_data
-def load_data():
-    file_url = "https://raw.githubusercontent.com/heesooedu/streamlit/refs/heads/main/2022%7E2024.csv"
-    df = pd.read_csv(file_url)
-    
-    # '기준년도'를 datetime 형식으로 변환
-    if '기준년도' in df.columns:
-        df['기준년도'] = pd.to_datetime(df['기준년도'], format='%Y')  # '2022', '2023' 형식 처리
-        df = df.sort_values('기준년도')  # 시간 순서 정렬
+# 데이터 불러오기
+url = "https://raw.githubusercontent.com/heesooedu/streamlit/refs/heads/main/2022%7E2024.csv"
+data = pd.read_csv(url)
 
-    return df
+# 데이터 가공
+grouped_data = data.groupby(['행정동', '연령대', '성별'])[['총인구수', '1인가구수']].sum().reset_index()
 
-# 데이터 로드
-df = load_data()
+# Streamlit UI 설정
+st.title("행정동별 연령대 및 성별에 따른 인구 데이터 시각화")
 
-# '월계1동' 데이터 필터링
-wolgae_df = df[df['행정동'] == '월계1동']
+# 선택 옵션
+selected_district = st.selectbox("행정동 선택", grouped_data['행정동'].unique())
 
-# Streamlit 페이지 설정
-st.title("📊 월계1동 인구 및 통계 시각화")
-st.write("이 대시보드는 월계1동의 인구 통계를 시각화합니다.")
+# 선택된 행정동에 대한 데이터 필터링
+filtered_data = grouped_data[grouped_data['행정동'] == selected_district]
 
-# 연령대별 총인구수 시각화
-st.subheader("🔹 연령대별 총인구수")
-age_population_cols = [col for col in wolgae_df.columns if '연령대' in col]
-age_population_data = wolgae_df[['기준년도'] + age_population_cols].set_index('기준년도')
-st.line_chart(age_population_data)
+# 그래프 생성
+fig, axes = plt.subplots(2, 1, figsize=(10, 10))
 
-# 1인 가구수 시각화
-st.subheader("🔹 1인 가구수 변화")
-one_person_household = wolgae_df[['기준년도', '1인가구수']].set_index('기준년도')
-st.line_chart(one_person_household)
+# 총인구수 시각화
+sns.barplot(data=filtered_data, x='연령대', y='총인구수', hue='성별', ax=axes[0])
+axes[0].set_title(f'{selected_district} - 연령대 및 성별에 따른 총인구수')
+axes[0].set_xticklabels(axes[0].get_xticklabels(), rotation=45)
 
-# 출근 소요시간 미추정 인구수 시각화
-st.subheader("🔹 출근 소요시간 미추정 인구수")
-unknown_commute_time = wolgae_df[['기준년도', '출근소요시간미추정인구수']].set_index('기준년도')
-st.area_chart(unknown_commute_time)
+# 1인가구수 시각화
+sns.barplot(data=filtered_data, x='연령대', y='1인가구수', hue='성별', ax=axes[1])
+axes[1].set_title(f'{selected_district} - 연령대 및 성별에 따른 1인가구수')
+axes[1].set_xticklabels(axes[1].get_xticklabels(), rotation=45)
 
-# 데이터프레임 전체 보기
-st.subheader("🔹 전체 데이터")
-st.dataframe(wolgae_df)
+plt.tight_layout()
+st.pyplot(fig)
+
+# 추가 설명
+st.write("이 대시보드는 특정 행정동에 대한 연령대 및 성별 인구 데이터를 시각화합니다.")
