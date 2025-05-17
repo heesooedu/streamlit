@@ -1,5 +1,5 @@
 streamlit
 pandas
+matplotlib
 plotly
-seaborn
-koreanize_matplotlib
+vpython 
