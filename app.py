@@ -1,36 +1,47 @@
-from vpython import *
+import streamlit as st
 import pandas as pd
+import numpy as np
 
-def run_simulation_and_save_data(output_filename='simulation_data.csv'):
-    # VPython 시뮬레이션 설정
-    scene = canvas(visible=False) # 시뮬레이션 자체를 화면에 표시하지 않도록 설정
-    scene.range = 5
-    scene.background = color.white
+# 1. 제목과 헤더 설정
+st.title('나의 첫 Streamlit 웹 앱')
+st.header('간단한 인터랙티브 기능을 체험해보세요.')
+st.write('---') # 구분선
 
-    ball = sphere(pos=vector(0,0,0), radius=0.5, color=color.red)
+# 2. 사용자 이름 입력 받기 (텍스트 입력 위젯)
+st.subheader('1. 텍스트 입력')
+name = st.text_input('이름을 입력해주세요:')
 
-    t = 0
-    dt = 0.01
-    max_time = 10 # 시뮬레이션 시간
+# 이름이 입력되었을 경우에만 인사 메시지 출력
+if name:
+    st.write(f'👋 안녕하세요, **{name}**님! 만나서 반갑습니다.')
 
-    data = {'time': [], 'x': [], 'y': [], 'z': []}
+st.write('---')
 
-    # 시뮬레이션 루프
-    while t <= max_time:
-        rate(100) # 화면에 표시하지 않으므로 rate는 성능에 큰 영향을 주지 않지만, 시뮬레이션 속도 조절에 사용될 수 있음
-        t = t + dt
-        ball.pos = vector(3*cos(t), 3*sin(t), 0)
+# 3. 숫자 입력 받기 (슬라이더 위젯)
+st.subheader('2. 숫자 선택과 계산')
+x = st.slider('제곱할 숫자를 선택하세요.', min_value=0, max_value=100, value=25, step=1)
+st.write(f'선택한 숫자 **{x}**의 제곱은 **{x*x}**입니다.')
 
-        # 데이터 기록
-        data['time'].append(t)
-        data['x'].append(ball.pos.x)
-        data['y'].append(ball.pos.y)
-        data['z'].append(ball.pos.z)
+st.write('---')
 
-    # 데이터 저장
-    df = pd.DataFrame(data)
-    df.to_csv(output_filename, index=False)
-    print(f"Simulation data saved to {output_filename}")
+# 4. 데이터 시각화 (선택 박스 위젯과 차트)
+st.subheader('3. 데이터 시각화')
+st.write('아래 드롭다운 메뉴에서 보고 싶은 데이터를 선택하면, 해당 데이터로 라인 차트를 생성합니다.')
 
-if __name__ == "__main__":
-    run_simulation_and_save_data()
+# 샘플 데이터 생성
+chart_data = pd.DataFrame(
+    np.random.randn(20, 3), # 20x3 크기의 난수 데이터 생성
+    columns=['데이터 A', '데이터 B', '데이터 C']
+)
+
+# 사용자가 차트에 표시할 데이터를 선택
+option = st.selectbox(
+    '어떤 데이터를 시각화할까요?',
+    ('데이터 A', '데이터 B', '데이터 C')
+)
+
+# 선택된 데이터로 라인 차트 그리기
+st.line_chart(chart_data[option])
+
+st.write('---')
+st.success('축하합니다! Streamlit 앱의 기본 기능을 모두 체험하셨습니다. 🎉')
