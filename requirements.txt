@@ -1,6 +1,5 @@
 streamlit
 pandas
-matplotlib
-plotly
-vpython 
 numpy
+altair
+pygithub   # (선택) GitHub 저장 쓸 때
