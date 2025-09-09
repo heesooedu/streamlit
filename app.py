@@ -39,15 +39,16 @@ while ball.pos.y >= 0:
     print(f"{{t:.2f}}, {{ball.pos.x:.2f}}, {{ball.pos.y:.2f}}, {{ball.v.x:.2f}}, {{ball.v.y:.2f}}")
 """
 
-# --- 4. 완전한 HTML 코드 생성 (수정된 최종본) ---
+# --- 4. 완전한 HTML 코드 생성 (최종 수정본) ---
+# JSDelivr CDN을 사용하는 공식 라이브러리 주소로 변경했습니다.
 full_html_code = f"""
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <title>GlowScript</title>
-    <script type="text/javascript" src="https://s3.amazonaws.com/glowscript/py/jquery.min.js"></script>
-    <script type="text/javascript" src="https://s3.amazonaws.com/glowscript/py/glow.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/jquery@3.6/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vpython@3.2.1/vpython.min.js"></script>
 </head>
 <body>
     <div id="glowscript" class="glowscript">
