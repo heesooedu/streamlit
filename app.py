@@ -64,15 +64,15 @@ while ball.pos.y >= 0:
 
 
 # --- 4. GlowScript 라이브러리를 포함한 완전한 HTML 코드 생성 ---
-# 시뮬레이션이 웹에서 실행되도록 JS 라이브러리를 CDN으로 불러오는 HTML 코드입니다.
+# (이 부분을 아래의 새 코드로 교체해주세요)
 full_html_code = f"""
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <title>GlowScript</title>
-    <script type="text/javascript" src="https://www.glowscript.org/lib/jquery/2.1/jquery.min.js"></script>
-    <script type="text/javascript" src="https://www.glowscript.org/lib/glow/3.2/glow.min.js"></script>
+    <script type="text/javascript" src="https://s3.amazonaws.com/glowscript/py/jquery.min.js"></script>
+    <script type="text/javascript" src="https://s3.amazonaws.com/glowscript/py/glow.min.js"></script>
 </head>
 <body>
     <div id="glowscript" class="glowscript">
