@@ -1,150 +1,96 @@
-import io, time
-import pandas as pd
-import numpy as np
 import streamlit as st
+import pandas as pd
 
-# (선택) GitHub 저장용
-USE_GITHUB = False
-try:
-    from github import Github
-    USE_GITHUB = True
-except:
-    USE_GITHUB = False
+# --- Streamlit UI 설정 ---
+st.set_page_config(layout="wide")
+st.title("🚀 GlowScript + Streamlit 통합 물리 시뮬레이터")
 
-st.set_page_config(page_title="Sim Hub", layout="wide")
-
-st.title("Sim Hub — Web VPython 데이터 업로드/시각화/다운로드")
-
+# 사이드바에서 파라미터 입력받기
 with st.sidebar:
-    st.markdown("### 1) Glowscript에서 CSV 다운")
-    st.markdown("- 시뮬레이션 끝나면 **CSV 다운로드 링크** 클릭")
-    st.markdown("### 2) 여기로 업로드")
-    st.markdown("- 여러 파일 한번에 가능")
-    st.markdown("### 3) 그래프/가공/다운로드")
-    st.markdown("### (선택) GitHub 저장")
-    st.markdown("- `Secrets`에 토큰 넣으면 버튼 활성화")
+    st.header("시뮬레이션 조건 설정")
+    v0 = st.slider("초기 속도 (m/s)", 10, 100, 50)
+    angle = st.slider("발사 각도 (도)", 10, 80, 45)
+    g = st.number_input("중력 가속도 (m/s^2)", value=9.8)
 
-uploaded = st.file_uploader("CSV 파일 업로드 (여러 개 가능)", type=["csv"], accept_multiple_files=True)
+# --- GlowScript 코드 동적 생성 ---
+# 입력받은 파라미터를 f-string을 이용해 VPython 코드에 삽입
+glowscript_code = f"""
+from vpython import *
 
-def auto_parse_csv(file):
-    df = pd.read_csv(file)
-    # 숫자 컬럼 자동 캐스팅
-    for c in df.columns:
-        try:
-            df[c] = pd.to_numeric(df[c])
-        except:
-            pass
-    return df
+scene.width = 600
+scene.height = 400
 
-if uploaded:
-    tabs = st.tabs([f"{f.name}" for f in uploaded])
+ball = sphere(pos=vector(0,0,0), radius=0.5, color=color.red, make_trail=True)
+ground = box(pos=vector(0,-1,0), size=vector(100,0.5,10))
 
-    for file, tab in zip(uploaded, tabs):
-        with tab:
-            df = auto_parse_csv(file)
+g = {g}
+v0 = {v0}
+theta = radians({angle})
 
-            st.subheader("원본 미리보기")
-            st.dataframe(df.head(50), use_container_width=True)
+ball.v = vector(v0*cos(theta), v0*sin(theta), 0)
+ball.m = 1
 
-            # 시간열 감지
-            time_cols = [c for c in df.columns if c.lower() in ("t","time","t_sec","time_s")]
-            default_t = time_cols[0] if time_cols else None
-            tcol = st.selectbox("시간 열 선택", [None] + list(df.columns), index=(0 if default_t is None else (1 + list(df.columns).index(default_t))))
-            ycols = st.multiselect("값(여러 열 선택 가능, 라인 그래프)", [c for c in df.columns if c != tcol],
-                                   default=[c for c in df.columns if c != tcol][:1])
+dt = 0.01
+t = 0
 
-            # 파생량(속도/가속도) 계산 옵션
-            make_derivatives = st.checkbox("파생량 생성: 속도/가속도", value=bool(tcol and len(ycols)>0))
-            if make_derivatives and tcol:
-                try:
-                    tvals = df[tcol].to_numpy()
-                    for yc in ycols:
-                        y = df[yc].to_numpy()
-                        v = np.gradient(y, tvals)
-                        a = np.gradient(v, tvals)
-                        df[f"{yc}_v"] = v
-                        df[f"{yc}_a"] = a
-                except Exception as e:
-                    st.info(f"파생량 계산 스킵: {e}")
+print("t, x, y, vx, vy") # CSV 헤더 출력
 
-            # 리샘플링/스무딩
-            with st.expander("전처리 옵션"):
-                resample = st.checkbox("균일 dt로 리샘플", value=False, help="불균일 시간 간격 → 균일 시계열")
-                sg = st.checkbox("Savitzky-Golay 스무딩", value=False)
-                if resample and tcol:
-                    dt = st.number_input("목표 dt (초)", min_value=0.0001, value=0.01, step=0.01, format="%.4f")
-                    tmin, tmax = float(df[tcol].min()), float(df[tcol].max())
-                    new_t = np.arange(tmin, tmax+dt/2, dt)
-                    df = df.sort_values(tcol)
-                    df_int = {tcol: new_t}
-                    for c in df.columns:
-                        if c == tcol: continue
-                        try:
-                            df_int[c] = np.interp(new_t, df[tcol], df[c])
-                        except:
-                            df_int[c] = np.nan
-                    df = pd.DataFrame(df_int)
+while ball.pos.y >= 0:
+    rate(100)
+    F = vector(0, -ball.m*g, 0)
+    ball.v = ball.v + F/ball.m * dt
+    ball.pos = ball.pos + ball.v * dt
+    t = t + dt
+    print(f"{{t:.2f}}, {{ball.pos.x:.2f}}, {{ball.pos.y:.2f}}, {{ball.v.x:.2f}}, {{ball.v.y:.2f}}")
+"""
 
-                if sg:
-                    try:
-                        from scipy.signal import savgol_filter
-                        win = st.slider("윈도우(홀수)", 5, 101, 21, step=2)
-                        poly = st.slider("다항차수", 1, 5, 3)
-                        for c in df.columns:
-                            if c == tcol: continue
-                            if pd.api.types.is_numeric_dtype(df[c]):
-                                df[c] = savgol_filter(df[c], window_length=min(win, len(df[c])//2*2-1), polyorder=min(poly, 5))
-                    except Exception:
-                        st.warning("`scipy`가 없으면 스무딩은 비활성입니다. (requirements에 scipy 추가 가능)")
+# HTML로 감싸서 iframe 생성
+# GlowScript 라이브러리를 로드하고 코드를 실행시키는 HTML 템플릿
+html_template = f"""
+<div id="glowscript" class="glowscript">
+<script type="text/x-glowscript">
+{glowscript_code}
+</script>
+</div>
+"""
 
-            st.subheader("그래프")
-            if tcol and ycols:
-                import altair as alt
-                base = alt.Chart(df).transform_fold(
-                    ycols, as_=['series','value']
-                )
-                chart = base.mark_line().encode(
-                    x=alt.X(f"{tcol}:Q", title=tcol),
-                    y=alt.Y("value:Q", title="value"),
-                    color="series:N",
-                    tooltip=[tcol, "series:N", "value:Q"]
-                ).interactive()
-                st.altair_chart(chart, use_container_width=True)
-            else:
-                st.info("시간 열과 값 열을 선택하면 그래프가 표시됩니다.")
+# --- 화면 레이아웃 구성 ---
+col1, col2 = st.columns([1, 1.2])
 
-            # 다운로드
-            st.subheader("가공 데이터 다운로드")
-            save_name = st.text_input("파일명", value=file.name.replace(".csv","") + "_processed.csv")
-            st.download_button("CSV 다운로드", data=df.to_csv(index=False).encode("utf-8"), file_name=save_name, mime="text/csv")
+with col1:
+    st.subheader("GlowScript 3D 시뮬레이션")
+    # `st.components.v1.html`을 사용해 GlowScript 렌더링
+    st.components.v1.html(html_template, height=450)
 
-            # (선택) GitHub 저장
-            st.subheader("GitHub 저장 (선택)")
-            if USE_GITHUB and "github" in st.secrets:
-                repo_name = st.secrets["github"].get("repo")
-                branch    = st.secrets["github"].get("branch","main")
-                token     = st.secrets["github"].get("token")
-                subdir    = st.secrets["github"].get("subdir","data")
-                if repo_name and token:
-                    if st.button(f"GitHub에 `{subdir}/{save_name}`로 저장"):
-                        try:
-                            gh = Github(token)
-                            repo = gh.get_repo(repo_name)
-                            path = f"{subdir}/{save_name}"
-                            content = df.to_csv(index=False)
-                            msg = f"Add {path} via Streamlit ({time.strftime('%Y-%m-%d %H:%M:%S')})"
-                            # 파일 존재여부 체크 → 있으면 update, 없으면 create
-                            try:
-                                existing = repo.get_contents(path, ref=branch)
-                                repo.update_file(path, msg, content, existing.sha, branch=branch)
-                            except Exception:
-                                repo.create_file(path, msg, content, branch=branch)
-                            st.success(f"Saved to GitHub: {repo_name}/{path}")
-                        except Exception as e:
-                            st.error(f"GitHub 저장 실패: {e}")
-                else:
-                    st.info("Streamlit Secrets에 `[github] token/repo/branch/subdir`를 설정하세요.")
-            else:
-                st.info("PyGithub 또는 GitHub secrets가 없어서 'GitHub 저장' 버튼을 비활성화했습니다.")
-else:
-    st.info("왼쪽 사이드바 안내를 따라 CSV를 업로드하세요.")
+with col2:
+    st.subheader("데이터 분석 및 시각화")
+    st.write("시뮬레이션이 끝나면 왼쪽 화면 아래에 나타나는 데이터를 복사해서 아래 칸에 붙여넣으세요.")
+    
+    # 데이터 붙여넣기 영역
+    pasted_data = st.text_area("데이터 붙여넣기", height=200, placeholder="t, x, y, vx, vy\\n0.01, 0.35, 0.35, 35.35, 35.30\\n...")
+    
+    if st.button("📈 데이터 분석 실행"):
+        if pasted_data:
+            from io import StringIO
+            df = pd.read_csv(StringIO(pasted_data))
+            
+            st.write("### 시간에 따른 위치(x, y) 그래프")
+            st.line_chart(df, x='t', y=['x', 'y'])
+            
+            st.write("### 시간에 따른 속도(vx, vy) 그래프")
+            st.line_chart(df, x='t', y=['vx', 'vy'])
+
+            # GlowScript에서는 보기 힘든, x-y 관계 그래프 (포물선 궤적)
+            st.write("### X-Y 궤적 그래프")
+            st.altair_chart(
+                {
+                    "data": {"values": df.to_dict("records")},
+                    "mark": "line",
+                    "encoding": {
+                        "x": {"field": "x", "type": "quantitative"},
+                        "y": {"field": "y", "type": "quantitative"}
+                    }
+                }, use_container_width=True
+            )
+        else:
+            st.warning("데이터를 먼저 붙여넣어 주세요.")
