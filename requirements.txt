@@ -3,4 +3,4 @@ pandas
 numpy
 altair
 pygithub   # (선택) GitHub 저장 쓸 때
-streamlit-vpython
+# streamlit-vpython
