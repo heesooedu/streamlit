@@ -49,7 +49,7 @@ with col_ctrl:
 with col_sim:
     st.subheader("시뮬레이션")
     # 템플릿 읽기 (캐시)
-    @st.cache_data
+    # @st.cache_data
     def load_template():
         with open("templates/glowscript_vpython_template.html", "r", encoding="utf-8") as f:
             return f.read()
