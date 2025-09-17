@@ -64,9 +64,11 @@ with col_sim:
 
     # 임베딩 (값 변경 시 재렌더링 → 시뮬 리셋)
     #st.components.v1.html(html_filled, height=520, scrolling=False)
-    st.components.v1.html(html_filled, height=520, scrolling=False, key=f"sim-{g}-{v0}-{angle}")
+    # st.components.v1.html(html_filled, height=520, scrolling=False, key=f"sim-{g}-{v0}-{angle}")
 
-
+    # 2) 임베딩: key 추가(값 바뀌면 iframe 재생성)
+    st.components.v1.html(html_filled, height=520, scrolling=False, 
+                          key=f"sim-{g}-{v0}-{angle}-{datetime.now().strftime('%H%M%S')}")
 st.markdown("---")
 
 # ======= 간단 분석(이론 사거리) =======
@@ -83,3 +85,13 @@ with col_b:
     st.metric("이론 최대높이 (m)", f"{hmax_theory:.2f}")
 
 st.caption("※ 화면의 '측정값(실험)'은 시뮬레이션 결과를 이용한 추정치이며, 위의 메트릭은 이론식(공기저항 무시)입니다.")
+
+
+st.markdown("### JS 실행 점검")
+st.components.v1.html("""
+<div id='t' style="padding:8px;border:1px dashed #ccc;">(대기중)</div>
+<script>
+document.getElementById('t').innerText = 'iframe 안에서 JS 실행 OK';
+</script>
+""", height=60)
+
