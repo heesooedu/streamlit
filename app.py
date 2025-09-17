@@ -12,7 +12,23 @@ st.set_page_config(page_title="VPython × Streamlit (Plan A, Inline Libs)", layo
 #   glow.3.2.min.js
 #   RSrun.3.2.min.js
 #   RScompile.3.2.min.js
-LIB_DIR = os.path.join("static", "glowscript")
+
+# 새 코드: app.py 위치 기준으로 후보 경로를 검색해 자동 선택
+ROOT = os.path.dirname(os.path.abspath(__file__))
+CANDIDATES = [
+    os.path.join(ROOT, "static", "glowscript"),             # 일반 구조
+    os.path.join(ROOT, "streamlit", "static", "glowscript") # 지금 네 저장소 구조
+]
+
+LIB_DIR = None
+for p in CANDIDATES:
+    if os.path.isdir(p):
+        LIB_DIR = p
+        break
+if LIB_DIR is None:
+    # 못 찾으면 기본값으로 두고, 아래 에러 패널이 경로 누락 안내를 띄움
+    LIB_DIR = CANDIDATES[0]
+
 REQUIRED_LIBS = [
     "jquery.min.js",
     "jquery-ui.custom.min.js",
@@ -28,23 +44,32 @@ def read_js_or_none(path: str):
     except Exception:
         return None
 
+def _libs_fingerprint(lib_dir:str):
+    fp = []
+    for fname in REQUIRED_LIBS:
+        p = os.path.join(lib_dir, fname)
+        try:
+            fp.append((fname, os.path.getmtime(p)))
+        except FileNotFoundError:
+            fp.append((fname, None))
+    return tuple(fp)
+
 @st.cache_data(show_spinner=False)
-def load_libs_inline():
-    """필요 JS를 읽어 <script>...</script> 블록으로 합치고, 누락 목록을 반환"""
+def load_libs_inline(lib_dir:str, fingerprint:tuple):
     missing = []
     blocks = []
     for fname in REQUIRED_LIBS:
-        p = os.path.join(LIB_DIR, fname)
-        src = read_js_or_none(p)
-        if src is None:
+        p = os.path.join(lib_dir, fname)
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                blocks.append(f"<script>{f.read()}</script>")
+        except Exception:
             missing.append(p)
-        else:
-            blocks.append(f"<script>{src}</script>")
     return "\n".join(blocks), missing
 
 def build_sim_html(g: float, v0: float, angle_deg: int, mode: str = "projectile") -> str:
     """mode='hello'면 빨간 박스, 'projectile'이면 투사체 시뮬"""
-    libs_html, missing = load_libs_inline()
+    libs_html, missing = load_libs_inline(LIB_DIR, _libs_fingerprint(LIB_DIR))
 
     head = f"""
 <!DOCTYPE html>
