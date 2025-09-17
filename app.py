@@ -1,91 +1,83 @@
 import streamlit as st
+from datetime import datetime
+import io
 import pandas as pd
-from io import StringIO
 
-# --- 페이지 기본 설정 ---
-st.set_page_config(layout="wide")
-st.title("🚀 GlowScript + Streamlit 통합 물리 시뮬레이터")
-st.write("외부 라이브러리 의존성을 제거하여 안정적으로 시뮬레이션을 실행합니다.")
-st.write("---")
+st.set_page_config(page_title="VPython + Streamlit (Plan A)", layout="wide")
 
-# --- 사이드바에서 시뮬레이션 조건 입력받기 ---
-with st.sidebar:
-    st.header("⚙️ 시뮬레이션 조건 설정")
-    v0 = st.slider("초기 속도 (m/s)", 10, 100, 50)
-    angle = st.slider("발사 각도 (도)", 10, 80, 45)
-    g = st.number_input("중력 가속도 (m/s²)", 9.8)
+# ========== 사이드/상단 컨트롤 ==========
+st.title("GlowScript VPython × Streamlit (Plan A: 템플릿 치환)")
 
-# --- VPython(GlowScript) 코드 생성 ---
-glowscript_code = f"""
-from vpython import *
+col_ctrl, col_sim = st.columns([1, 2], gap="large")
 
-scene.width = 600
-scene.height = 400
-ball = sphere(pos=vector(0,0,0), radius=0.5, color=color.red, make_trail=True, trail_color=color.yellow)
-ground = box(pos=vector(0,-1,0), size=vector(150,0.5,10), color=color.green)
+with col_ctrl:
+    st.subheader("실험 설정")
+    g = st.slider("중력 가속도 g (m/s²)", min_value=1.0, max_value=20.0, value=9.8, step=0.1)
+    v0 = st.slider("초기속도 v0 (m/s)", min_value=1.0, max_value=50.0, value=20.0, step=0.5)
+    angle = st.slider("발사각 (deg)", min_value=0, max_value=90, value=45, step=1)
 
-g = {g}
-v0 = {v0}
-theta = radians({angle})
+    st.markdown("---")
+    st.subheader("실험 기록")
+    if "runs" not in st.session_state:
+        st.session_state.runs = []
 
-ball.v = vector(v0*cos(theta), v0*sin(theta), 0)
-ball.m = 1
-dt = 0.01
-t = 0
+    # 기록 추가 버튼
+    if st.button("현재 설정을 기록에 추가"):
+        st.session_state.runs.append({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "g": float(g),
+            "v0": float(v0),
+            "angle_deg": int(angle),
+        })
 
-print("t,x,y,vx,vy")
+    # 기록 테이블
+    if len(st.session_state.runs) > 0:
+        df = pd.DataFrame(st.session_state.runs)
+        st.dataframe(df, use_container_width=True, hide_index=True)
 
-while ball.pos.y >= 0:
-    rate(100)
-    F = vector(0, -ball.m*g, 0)
-    ball.v = ball.v + F/ball.m * dt
-    ball.pos = ball.pos + ball.v * dt
-    t = t + dt
-    print(f"{{t:.2f}},{{ball.pos.x:.2f}},{{ball.pos.y:.2f}},{{ball.v.x:.2f}},{{ball.v.y:.2f}}")
-"""
+        # CSV 다운로드
+        csv = df.to_csv(index=False).encode("utf-8-sig")
+        st.download_button(
+            "CSV로 다운로드",
+            data=csv,
+            file_name="runs.csv",
+            mime="text/csv"
+        )
+    else:
+        st.info("아직 기록이 없습니다. 파라미터를 조정하고 '현재 설정을 기록에 추가'를 누르세요.")
 
-# --- 완전한 HTML 코드 생성 (검증된 최종 CDN 주소 사용) ---
-# 이 HTML 코드는 외부 라이브러리 설치 없이 브라우저에서 직접 VPython을 렌더링합니다.
-full_html_code = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>GlowScript</title>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/jquery@3.6/dist/jquery.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vpython@7.6.3/dist/vpython.min.js"></script>
-</head>
-<body>
-    <div id="glowscript" class="glowscript">
-        <script type="text/x-glowscript">
-        {glowscript_code}
-        </script>
-    </div>
-</body>
-</html>
-"""
+with col_sim:
+    st.subheader("시뮬레이션")
+    # 템플릿 읽기 (캐시)
+    @st.cache_data
+    def load_template():
+        with open("templates/glowscript_vpython_template.html", "r", encoding="utf-8") as f:
+            return f.read()
 
-# --- 화면 레이아웃 구성 ---
-col1, col2 = st.columns([1, 1.2])
+    html_template = load_template()
+    # 토큰 치환
+    html_filled = (html_template
+                   .replace("__G__", str(g))
+                   .replace("__V0__", str(v0))
+                   .replace("__ANGLE__", str(angle))
+                   )
 
-with col1:
-    st.subheader("GlowScript 3D 시뮬레이션")
-    # HTML 컴포넌트를 사용하여 시뮬레이션을 렌더링합니다.
-    st.components.v1.html(full_html_code, height=450, scrolling=False)
+    # 임베딩 (값 변경 시 재렌더링 → 시뮬 리셋)
+    st.components.v1.html(html_filled, height=520, scrolling=False)
 
-with col2:
-    st.subheader("데이터 분석 및 시각화")
-    st.info("시뮬레이션이 끝나면 왼쪽 화면 아래에 나타나는 데이터를 복사해서 아래 칸에 붙여넣으세요.")
-    pasted_data = st.text_area("데이터 붙여넣기", height=200, placeholder="t,x,y,vx,vy\\n0.01,0.35,0.35,35.35,35.30\\n...")
-    
-    if st.button("📈 데이터 분석 실행"):
-        if pasted_data:
-            try:
-                df = pd.read_csv(StringIO(pasted_data))
-                st.dataframe(df)
-                st.write("##### X-Y 궤적 그래프 (포물선)")
-                st.scatter_chart(df, x='x', y='y')
-            except Exception as e:
-                st.error(f"데이터 형식을 확인해주세요: {e}")
-        else:
-            st.warning("데이터를 먼저 붙여넣어 주세요.")
+st.markdown("---")
+
+# ======= 간단 분석(이론 사거리) =======
+st.subheader("간단 분석 (공기저항 무시 이론값)")
+import math
+angle_rad = math.radians(angle)
+range_theory = (v0**2 * math.sin(2*angle_rad)) / g if g > 0 else float('nan')
+hmax_theory = (v0**2 * (math.sin(angle_rad)**2)) / (2*g) if g > 0 else float('nan')
+
+col_a, col_b = st.columns(2)
+with col_a:
+    st.metric("이론 사거리 (m)", f"{range_theory:.2f}")
+with col_b:
+    st.metric("이론 최대높이 (m)", f"{hmax_theory:.2f}")
+
+st.caption("※ 화면의 '측정값(실험)'은 시뮬레이션 결과를 이용한 추정치이며, 위의 메트릭은 이론식(공기저항 무시)입니다.")
