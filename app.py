@@ -1,4 +1,4 @@
-# app.py — Streamlit × GlowScript (CDN/도메인 의존 없음, 로컬 동봉 라이브러리 인라인 주입)
+# app.py — Streamlit × GlowScript (인라인 라이브러리 + 안전한 문자열 처리)
 import streamlit as st
 from datetime import datetime
 import math
@@ -6,6 +6,12 @@ import os
 
 st.set_page_config(page_title="VPython × Streamlit (Plan A, Inline Libs)", layout="wide")
 
+# 리포지토리에 동봉해야 할 파일 (static/glowscript/ 아래)
+#   jquery.min.js
+#   jquery-ui.custom.min.js
+#   glow.3.2.min.js
+#   RSrun.3.2.min.js
+#   RScompile.3.2.min.js
 LIB_DIR = os.path.join("static", "glowscript")
 REQUIRED_LIBS = [
     "jquery.min.js",
@@ -15,7 +21,7 @@ REQUIRED_LIBS = [
     "RScompile.3.2.min.js",
 ]
 
-def read_js_or_none(path: str) -> str | None:
+def read_js_or_none(path: str):
     try:
         with open(path, "r", encoding="utf-8") as f:
             return f.read()
@@ -23,10 +29,8 @@ def read_js_or_none(path: str) -> str | None:
         return None
 
 @st.cache_data(show_spinner=False)
-def load_libs_inline() -> tuple[str, list[str]]:
-    """필요한 JS 파일을 읽어 <script>...</script> 형태로 인라인 주입 문자열을 만든다.
-    반환: (libs_html, missing_list)
-    """
+def load_libs_inline():
+    """필요 JS를 읽어 <script>...</script> 블록으로 합치고, 누락 목록을 반환"""
     missing = []
     blocks = []
     for fname in REQUIRED_LIBS:
@@ -39,10 +43,9 @@ def load_libs_inline() -> tuple[str, list[str]]:
     return "\n".join(blocks), missing
 
 def build_sim_html(g: float, v0: float, angle_deg: int, mode: str = "projectile") -> str:
-    """mode='hello'면 빨간 박스만, 'projectile'이면 투사체 시뮬레이션"""
+    """mode='hello'면 빨간 박스, 'projectile'이면 투사체 시뮬"""
     libs_html, missing = load_libs_inline()
 
-    # 기본 골격
     head = f"""
 <!DOCTYPE html>
 <html>
@@ -51,9 +54,11 @@ def build_sim_html(g: float, v0: float, angle_deg: int, mode: str = "projectile"
 <style>
   html, body {{ width:100%; height:100%; margin:0; padding:0; }}
   #glowscript {{ width:100%; height:100%; }}
-  #err {{ position:absolute; left:8px; bottom:8px; right:8px;
-          background:#fff3cd; color:#663c00; font:12px/1.4 sans-serif;
-          border:1px solid #ffe69c; padding:6px; display:none; z-index:9999; }}
+  #err {{
+    position:absolute; left:8px; bottom:8px; right:8px;
+    background:#fff3cd; color:#663c00; font:12px/1.4 sans-serif;
+    border:1px solid #ffe69c; padding:6px; display:none; z-index:9999;
+  }}
 </style>
 {libs_html}
 </head>
@@ -61,9 +66,9 @@ def build_sim_html(g: float, v0: float, angle_deg: int, mode: str = "projectile"
 <div id="glowscript"></div>
 <div id="err"></div>
 <script>
-  // GlowScript가 붙을 컨테이너 지정
+  // GlowScript 컨테이너 지정
   window.__context = {{ glowscript_container: $("#glowscript") }};
-  // 에러 표시 패널
+  // 에러 패널
   (function(){{
     var p = document.getElementById('err');
     function show(msg){{ p.style.display='block'; p.textContent += (p.textContent?'\\n':'') + msg; }}
@@ -80,16 +85,38 @@ def build_sim_html(g: float, v0: float, angle_deg: int, mode: str = "projectile"
   }})();
 </script>
 """
-    # 파이썬 코드 블록
+
+    if missing:
+        # 라이브러리 누락 시 안내만 표시
+        missing_list = "\\n".join(missing)
+        guide = f"""
+<script>
+  var p = document.getElementById('err');
+  p.style.display='block';
+  p.textContent = "GlowScript 라이브러리 파일을 찾을 수 없습니다.\\n" +
+                  "다음 파일을 리포지토리에 추가하세요:\\n{missing_list}";
+</script>
+"""
+        tail = """
+<script type="text/python">
+from vpython import *
+# 라이브러리 누락으로 실행 불가
+</script>
+</body>
+</html>
+"""
+        return head + guide + tail
+
+    # ⚠️ 중첩 f-string 문제 방지: 바깥은 .format 사용, 안쪽 f-string 중괄호는 {{ }}
     if mode == "hello":
-        pycode = f"""
+        pycode = """
 from vpython import *
 scene.title = "Hello GlowScript"
 scene.background = color.white
 box(color=color.red)
 """
     else:
-        pycode = f"""
+        pycode = """
 from vpython import *
 g = {g}
 v0 = {v0}
@@ -130,9 +157,9 @@ range_est = ball.pos.x
 time_of_flight = t
 hmax_est = (v0**2 * sin(angle)**2) / (2*g)
 
-info.text = f"사거리 ≈ {range_est:.2f} m\\n비행시간 ≈ {time_of_flight:.2f} s\\n이론 최대높이 ≈ {hmax_est:.2f} m"
+info.text = f"사거리 ≈ {{range_est:.2f}} m\\n비행시간 ≈ {{time_of_flight:.2f}} s\\n이론 최대높이 ≈ {{hmax_est:.2f}} m"
 scene.center = vector(max(15, range_est/2), 5, 0)
-"""
+""".format(g=g, v0=v0, angle_deg=angle_deg)
 
     tail = """
 <script type="text/python">
@@ -141,23 +168,6 @@ scene.center = vector(max(15, range_est/2), 5, 0)
 </body>
 </html>
 """
-
-    # 라이브러리 누락 시, 화면에 친절한 가이드 출력(빨간 박스 대신)
-    if missing:
-        missing_list = "\\n".join(missing)
-        guide = f"""
-<script>
-  var p = document.getElementById('err');
-  p.style.display='block';
-  p.textContent = "GlowScript 라이브러리 파일을 찾을 수 없습니다.\\n" +
-                  "다음 파일을 리포지토리에 추가하세요:\\n{missing_list}";
-</script>
-"""
-        return head + guide + tail.replace(
-            "# 위에서 구성한 pycode가 이 자리에 삽입됩니다.", "from vpython import *\n# 라이브러리 누락으로 실행 불가"
-        )
-
-    # 정상: 파이썬 코드 삽입
     return head + tail.replace("# 위에서 구성한 pycode가 이 자리에 삽입됩니다.", pycode)
 
 # ----------------------- UI -----------------------
@@ -183,7 +193,6 @@ with col_ctrl:
         })
 
     if st.session_state.runs:
-        # 간단 표(판다스 없어도 되게 기본 렌더)
         import pandas as pd
         st.dataframe(pd.DataFrame(st.session_state.runs), use_container_width=True, hide_index=True)
         csv = pd.DataFrame(st.session_state.runs).to_csv(index=False).encode("utf-8-sig")
@@ -193,8 +202,9 @@ with col_ctrl:
 
 with col_sim:
     st.subheader("시뮬레이션")
-    html = build_sim_html(g=g, v0=v0, angle_deg=angle, mode="projectile")  # "hello"로 바꾸면 빨간 박스 테스트
-    st.components.v1.html(html, height=520, scrolling=False)
+    # 처음엔 "hello"로 바꿔 빨간 박스 확인 -> 되면 "projectile"로 변경
+    html = build_sim_html(g=g, v0=v0, angle_deg=angle, mode="projectile")
+    st.components.v1.html(html, height=520, scrolling=False)  # key 인자 쓰지 마세요
 
 st.markdown("---")
 
@@ -205,7 +215,9 @@ range_theory = (v0**2 * math.sin(2*angle_rad)) / g if g > 0 else float('nan')
 hmax_theory = (v0**2 * (math.sin(angle_rad)**2)) / (2*g) if g > 0 else float('nan')
 
 c1, c2 = st.columns(2)
-with c1: st.metric("이론 사거리 (m)", f"{range_theory:.2f}")
-with c2: st.metric("이론 최대높이 (m)", f"{hmax_theory:.2f}")
+with c1:
+    st.metric("이론 사거리 (m)", f"{range_theory:.2f}")
+with c2:
+    st.metric("이론 최대높이 (m)", f"{hmax_theory:.2f}")
 
 st.caption("※ 위 메트릭은 이론식(공기저항 무시), 화면 라벨은 시뮬레이션 추정치입니다.")
