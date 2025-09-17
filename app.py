@@ -1,12 +1,167 @@
+# app.py — Streamlit × GlowScript (CDN/도메인 의존 없음, 로컬 동봉 라이브러리 인라인 주입)
 import streamlit as st
 from datetime import datetime
-import io
-import pandas as pd
+import math
+import os
 
-st.set_page_config(page_title="VPython + Streamlit (Plan A)", layout="wide")
+st.set_page_config(page_title="VPython × Streamlit (Plan A, Inline Libs)", layout="wide")
 
-# ========== 사이드/상단 컨트롤 ==========
-st.title("GlowScript VPython × Streamlit (Plan A: 템플릿 치환)")
+LIB_DIR = os.path.join("static", "glowscript")
+REQUIRED_LIBS = [
+    "jquery.min.js",
+    "jquery-ui.custom.min.js",
+    "glow.3.2.min.js",
+    "RSrun.3.2.min.js",
+    "RScompile.3.2.min.js",
+]
+
+def read_js_or_none(path: str) -> str | None:
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
+    except Exception:
+        return None
+
+@st.cache_data(show_spinner=False)
+def load_libs_inline() -> tuple[str, list[str]]:
+    """필요한 JS 파일을 읽어 <script>...</script> 형태로 인라인 주입 문자열을 만든다.
+    반환: (libs_html, missing_list)
+    """
+    missing = []
+    blocks = []
+    for fname in REQUIRED_LIBS:
+        p = os.path.join(LIB_DIR, fname)
+        src = read_js_or_none(p)
+        if src is None:
+            missing.append(p)
+        else:
+            blocks.append(f"<script>{src}</script>")
+    return "\n".join(blocks), missing
+
+def build_sim_html(g: float, v0: float, angle_deg: int, mode: str = "projectile") -> str:
+    """mode='hello'면 빨간 박스만, 'projectile'이면 투사체 시뮬레이션"""
+    libs_html, missing = load_libs_inline()
+
+    # 기본 골격
+    head = f"""
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  html, body {{ width:100%; height:100%; margin:0; padding:0; }}
+  #glowscript {{ width:100%; height:100%; }}
+  #err {{ position:absolute; left:8px; bottom:8px; right:8px;
+          background:#fff3cd; color:#663c00; font:12px/1.4 sans-serif;
+          border:1px solid #ffe69c; padding:6px; display:none; z-index:9999; }}
+</style>
+{libs_html}
+</head>
+<body>
+<div id="glowscript"></div>
+<div id="err"></div>
+<script>
+  // GlowScript가 붙을 컨테이너 지정
+  window.__context = {{ glowscript_container: $("#glowscript") }};
+  // 에러 표시 패널
+  (function(){{
+    var p = document.getElementById('err');
+    function show(msg){{ p.style.display='block'; p.textContent += (p.textContent?'\\n':'') + msg; }}
+    window.onerror = function (msg, src, line, col, err) {{
+      show("[Error] " + msg + " @" + src + ":" + line + ":" + col);
+    }};
+    ['log','warn','error'].forEach(function(k){{
+      var orig = console[k];
+      console[k] = function(){{
+        try {{ show("[console."+k+"] " + Array.from(arguments).join(" ")); }} catch(e){{}}
+        if (orig) orig.apply(console, arguments);
+      }};
+    }});
+  }})();
+</script>
+"""
+    # 파이썬 코드 블록
+    if mode == "hello":
+        pycode = f"""
+from vpython import *
+scene.title = "Hello GlowScript"
+scene.background = color.white
+box(color=color.red)
+"""
+    else:
+        pycode = f"""
+from vpython import *
+g = {g}
+v0 = {v0}
+angle_deg = {angle_deg}
+
+scene.title = "Projectile (GlowScript VPython)"
+scene.background = color.white
+scene.width = 700
+scene.height = 450
+scene.center = vector(15,5,0)
+
+ground = box(pos=vector(15,-0.05,0), size=vector(60,0.1,4), color=vector(0.9,0.9,0.9))
+curve(pos=[vector(0,0,0), vector(60,0,0)], color=color.gray(0.7))
+curve(pos=[vector(0,0,0), vector(0,15,0)], color=color.gray(0.7))
+
+ball = sphere(pos=vector(0,0,0), radius=0.3, color=color.blue, make_trail=True, trail_color=color.cyan)
+angle = radians(angle_deg)
+v = vector(v0*cos(angle), v0*sin(angle), 0)
+dt = 0.01
+t = 0
+
+label(pos=vector(30,14,0), text="측정값(실험)", box=False, height=16, color=color.black)
+info = label(pos=vector(30,12,0), text="", box=False, height=14, color=color.black)
+
+while ball.pos.y >= 0:
+    rate(200)
+    v = v + vector(0, -g, 0)*dt
+    ball.pos = ball.pos + v*dt
+    t += dt
+
+ball.pos = ball.pos - v*dt
+t -= dt
+tau = ball.pos.y/(-v.y) if v.y < 0 else 0.0
+ball.pos = ball.pos + v*tau
+t += tau
+
+range_est = ball.pos.x
+time_of_flight = t
+hmax_est = (v0**2 * sin(angle)**2) / (2*g)
+
+info.text = f"사거리 ≈ {range_est:.2f} m\\n비행시간 ≈ {time_of_flight:.2f} s\\n이론 최대높이 ≈ {hmax_est:.2f} m"
+scene.center = vector(max(15, range_est/2), 5, 0)
+"""
+
+    tail = """
+<script type="text/python">
+# 위에서 구성한 pycode가 이 자리에 삽입됩니다.
+</script>
+</body>
+</html>
+"""
+
+    # 라이브러리 누락 시, 화면에 친절한 가이드 출력(빨간 박스 대신)
+    if missing:
+        missing_list = "\\n".join(missing)
+        guide = f"""
+<script>
+  var p = document.getElementById('err');
+  p.style.display='block';
+  p.textContent = "GlowScript 라이브러리 파일을 찾을 수 없습니다.\\n" +
+                  "다음 파일을 리포지토리에 추가하세요:\\n{missing_list}";
+</script>
+"""
+        return head + guide + tail.replace(
+            "# 위에서 구성한 pycode가 이 자리에 삽입됩니다.", "from vpython import *\n# 라이브러리 누락으로 실행 불가"
+        )
+
+    # 정상: 파이썬 코드 삽입
+    return head + tail.replace("# 위에서 구성한 pycode가 이 자리에 삽입됩니다.", pycode)
+
+# ----------------------- UI -----------------------
+st.title("GlowScript VPython × Streamlit (Plan A: Inline Libraries)")
 
 col_ctrl, col_sim = st.columns([1, 2], gap="large")
 
@@ -21,100 +176,36 @@ with col_ctrl:
     if "runs" not in st.session_state:
         st.session_state.runs = []
 
-    # 기록 추가 버튼
     if st.button("현재 설정을 기록에 추가"):
         st.session_state.runs.append({
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "g": float(g),
-            "v0": float(v0),
-            "angle_deg": int(angle),
+            "g": float(g), "v0": float(v0), "angle_deg": int(angle),
         })
 
-    # 기록 테이블
-    if len(st.session_state.runs) > 0:
-        df = pd.DataFrame(st.session_state.runs)
-        st.dataframe(df, use_container_width=True, hide_index=True)
-
-        # CSV 다운로드
-        csv = df.to_csv(index=False).encode("utf-8-sig")
-        st.download_button(
-            "CSV로 다운로드",
-            data=csv,
-            file_name="runs.csv",
-            mime="text/csv"
-        )
+    if st.session_state.runs:
+        # 간단 표(판다스 없어도 되게 기본 렌더)
+        import pandas as pd
+        st.dataframe(pd.DataFrame(st.session_state.runs), use_container_width=True, hide_index=True)
+        csv = pd.DataFrame(st.session_state.runs).to_csv(index=False).encode("utf-8-sig")
+        st.download_button("CSV로 다운로드", data=csv, file_name="runs.csv", mime="text/csv")
     else:
         st.info("아직 기록이 없습니다. 파라미터를 조정하고 '현재 설정을 기록에 추가'를 누르세요.")
 
 with col_sim:
     st.subheader("시뮬레이션")
-    # 템플릿 읽기 (캐시)
-    # @st.cache_data
-    def load_template():
-        with open("templates/glowscript_vpython_template.html", "r", encoding="utf-8") as f:
-            return f.read()
-
-    html_template = load_template()
-    # 토큰 치환
-    html_filled = (html_template
-                   .replace("__G__", str(g))
-                   .replace("__V0__", str(v0))
-                   .replace("__ANGLE__", str(angle))
-                   )
-
-    # 임베딩 (값 변경 시 재렌더링 → 시뮬 리셋)
-    st.components.v1.html(html_filled, height=520, scrolling=False)
+    html = build_sim_html(g=g, v0=v0, angle_deg=angle, mode="projectile")  # "hello"로 바꾸면 빨간 박스 테스트
+    st.components.v1.html(html, height=520, scrolling=False)
 
 st.markdown("---")
 
-# ======= 간단 분석(이론 사거리) =======
+# 간단 이론값 메트릭
 st.subheader("간단 분석 (공기저항 무시 이론값)")
-import math
 angle_rad = math.radians(angle)
 range_theory = (v0**2 * math.sin(2*angle_rad)) / g if g > 0 else float('nan')
 hmax_theory = (v0**2 * (math.sin(angle_rad)**2)) / (2*g) if g > 0 else float('nan')
 
-col_a, col_b = st.columns(2)
-with col_a:
-    st.metric("이론 사거리 (m)", f"{range_theory:.2f}")
-with col_b:
-    st.metric("이론 최대높이 (m)", f"{hmax_theory:.2f}")
+c1, c2 = st.columns(2)
+with c1: st.metric("이론 사거리 (m)", f"{range_theory:.2f}")
+with c2: st.metric("이론 최대높이 (m)", f"{hmax_theory:.2f}")
 
-st.caption("※ 화면의 '측정값(실험)'은 시뮬레이션 결과를 이용한 추정치이며, 위의 메트릭은 이론식(공기저항 무시)입니다.")
-
-
-st.markdown("### JS 실행 점검")
-st.components.v1.html("""
-<div id='t' style="padding:8px;border:1px dashed #ccc;">(대기중)</div>
-<script>
-document.getElementById('t').innerText = 'iframe 안에서 JS 실행 OK';
-</script>
-""", height=60)
-
-st.markdown("#### GlowScript CDN 로딩 진단")
-st.components.v1.html("""
-<div id="status" style="font:12px/1.4 sans-serif;padding:6px;border:1px dashed #bbb"></div>
-<script>
-const libs = [
-  "https://www.glowscript.org/lib/jquery/2.1/jquery.min.js",
-  "https://www.glowscript.org/lib/jquery/2.1/jquery-ui.custom.min.js",
-  "https://www.glowscript.org/lib/glow.3.2.min.js",
-  "https://www.glowscript.org/package/RSrun.3.2.min.js",
-  "https://www.glowscript.org/package/RScompile.3.2.min.js"
-];
-const s = document.getElementById('status');
-function log(msg){ s.innerText += msg + "\\n"; }
-(async ()=>{
-  for (const url of libs){
-    await new Promise(res=>{
-      const el = document.createElement('script');
-      el.src = url;
-      el.onload = ()=>{ log("loaded: " + url); res(); }
-      el.onerror = ()=>{ log("**FAILED**: " + url); res(); }
-      document.body.appendChild(el);
-    });
-  }
-})();
-</script>
-""", height=140, scrolling=False)
-
+st.caption("※ 위 메트릭은 이론식(공기저항 무시), 화면 라벨은 시뮬레이션 추정치입니다.")
