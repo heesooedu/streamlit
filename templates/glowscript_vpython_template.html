@@ -7,76 +7,23 @@
     #glowscript { width:100%; height:100%; }
   </style>
 
-  <!-- 반드시 이 순서 -->
-  <script src="https://www.glowscript.org/lib/jquery/2.1/jquery.min.js"></script>
-  <script src="https://www.glowscript.org/lib/jquery/2.1/jquery-ui.custom.min.js"></script>
-  <script src="https://www.glowscript.org/lib/glow.3.2.min.js"></script>
-  <!-- ▼ 이 파일이 없으면 text/python을 컴파일하지 않음 ▼ -->
-  <script src="https://www.glowscript.org/package/RSrun.3.2.min.js"></script>
+  <!-- 내 리포지토리(jsDelivr)에서 로드 -->
+  <script src="__CDN__/jquery.min.js"></script>
+  <script src="__CDN__/jquery-ui.custom.min.js"></script>
+  <script src="__CDN__/glow.3.2.min.js"></script>
+  <script src="__CDN__/RSrun.3.2.min.js"></script>
+  <script src="__CDN__/RScompile.3.2.min.js"></script>
 </head>
 <body>
   <div id="glowscript"></div>
+  <script>window.__context = { glowscript_container: $("#glowscript") };</script>
 
-  <!-- GlowScript가 붙을 컨테이너 지정 -->
-  <script>
-    window.__context = { glowscript_container: $("#glowscript") };
-  </script>
-
-  <!-- 먼저 '박스 하나'만 띄우는 최소 테스트 -->
-  <!-- 이게 보이면 환경은 정상이고, 아래 투사체 코드로 바꾸면 됨 -->
+  <!-- 1단계: 최소 테스트(빨간 박스) -->
   <script type="text/python">
 from vpython import *
 scene.title = "Hello GlowScript"
 scene.background = color.white
 box(color=color.red)
   </script>
-
-  <!-- ✅ 박스가 보이는 것 확인되면, 위 블록을 지우고 아래 투사체 코드로 교체하세요.
-  <script type="text/python">
-from vpython import *
-g = __G__
-v0 = __V0__
-angle_deg = __ANGLE__
-
-scene.title = "Projectile (GlowScript VPython)"
-scene.background = color.white
-scene.width = 700
-scene.height = 450
-scene.center = vector(15,5,0)
-
-ground = box(pos=vector(15,-0.05,0), size=vector(60,0.1,4), color=vector(0.9,0.9,0.9))
-curve(pos=[vector(0,0,0), vector(60,0,0)], color=color.gray(0.7))
-curve(pos=[vector(0,0,0), vector(0,15,0)], color=color.gray(0.7))
-
-ball = sphere(pos=vector(0,0,0), radius=0.3, color=color.blue, make_trail=True, trail_color=color.cyan)
-
-angle = radians(angle_deg)
-v = vector(v0*cos(angle), v0*sin(angle), 0)
-dt = 0.01
-t = 0
-
-label(pos=vector(30,14,0), text="측정값(실험)", box=False, height=16, color=color.black)
-info = label(pos=vector(30,12,0), text="", box=False, height=14, color=color.black)
-
-while ball.pos.y >= 0:
-    rate(200)
-    v = v + vector(0, -g, 0)*dt
-    ball.pos = ball.pos + v*dt
-    t += dt
-
-ball.pos = ball.pos - v*dt
-t -= dt
-tau = ball.pos.y/(-v.y) if v.y < 0 else 0.0
-ball.pos = ball.pos + v*tau
-t += tau
-
-range_est = ball.pos.x
-time_of_flight = t
-hmax_est = (v0**2 * sin(angle)**2) / (2*g)
-
-info.text = f"사거리 ≈ {range_est:.2f} m\n비행시간 ≈ {time_of_flight:.2f} s\n이론 최대높이 ≈ {hmax_est:.2f} m"
-scene.center = vector(max(15, range_est/2), 5, 0)
-  </script>
-  -->
 </body>
 </html>
