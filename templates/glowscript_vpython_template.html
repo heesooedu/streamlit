@@ -5,55 +5,39 @@
   <style>
     html, body { width:100%; height:100%; margin:0; padding:0; }
     #glowscript { width:100%; height:100%; }
-    #errpanel { position:absolute; left:8px; bottom:8px; right:8px; 
-                background:#fff3cd; color:#663c00; font:12px/1.4 sans-serif; 
-                border:1px solid #ffe69c; padding:6px; display:none; z-index:9999; }
   </style>
-  <!-- 반드시 이 순서 유지 -->
+
+  <!-- 반드시 이 순서 -->
   <script src="https://www.glowscript.org/lib/jquery/2.1/jquery.min.js"></script>
   <script src="https://www.glowscript.org/lib/jquery/2.1/jquery-ui.custom.min.js"></script>
   <script src="https://www.glowscript.org/lib/glow.3.2.min.js"></script>
-  <!-- 일부 환경에서 text/python 트랜스파일에 필요 -> 안전하게 추가 -->
-  <script src="https://www.glowscript.org/lib/glowscript.min.js"></script>
+  <!-- ▼ 이 파일이 없으면 text/python을 컴파일하지 않음 ▼ -->
+  <script src="https://www.glowscript.org/package/RSrun.3.2.min.js"></script>
 </head>
 <body>
   <div id="glowscript"></div>
-  <div id="errpanel"></div>
 
-  <!-- GlowScript가 그릴 대상 지정 -->
+  <!-- GlowScript가 붙을 컨테이너 지정 -->
   <script>
     window.__context = { glowscript_container: $("#glowscript") };
-
-    // iframe 안에서 에러를 화면에 띄워 원인 추적
-    (function(){
-      var p = document.getElementById('errpanel');
-      function show(msg){
-        p.style.display='block';
-        p.textContent = (p.textContent ? p.textContent + "\n" : "") + msg;
-      }
-      window.onerror = function (msg, src, line, col, err) {
-        show("[Error] " + msg + " @" + src + ":" + line + ":" + col);
-      };
-      ['log','warn','error'].forEach(function(k){
-        var orig = console[k];
-        console[k] = function(){
-          try { show("[console."+k+"] " + Array.from(arguments).join(" ")); } catch(e){}
-          orig && orig.apply(console, arguments);
-        };
-      });
-    })();
   </script>
 
-  <!-- ▼▼ 여기부터 VPython (두 모드 호환: text/vpython 우선, 실패시 아래 text/python 참고) ▼▼ -->
-  <script type="text/vpython">
+  <!-- 먼저 '박스 하나'만 띄우는 최소 테스트 -->
+  <!-- 이게 보이면 환경은 정상이고, 아래 투사체 코드로 바꾸면 됨 -->
+  <script type="text/python">
 from vpython import *
+scene.title = "Hello GlowScript"
+scene.background = color.white
+box(color=color.red)
+  </script>
 
-# ----- 파라미터(스트림릿이 치환) -----
+  <!-- ✅ 박스가 보이는 것 확인되면, 위 블록을 지우고 아래 투사체 코드로 교체하세요.
+  <script type="text/python">
+from vpython import *
 g = __G__
 v0 = __V0__
 angle_deg = __ANGLE__
 
-# ----- 장면 -----
 scene.title = "Projectile (GlowScript VPython)"
 scene.background = color.white
 scene.width = 700
@@ -93,12 +77,6 @@ hmax_est = (v0**2 * sin(angle)**2) / (2*g)
 info.text = f"사거리 ≈ {range_est:.2f} m\n비행시간 ≈ {time_of_flight:.2f} s\n이론 최대높이 ≈ {hmax_est:.2f} m"
 scene.center = vector(max(15, range_est/2), 5, 0)
   </script>
-
-  <!-- 만약 일부 환경에서 text/vpython이 동작하지 않으면, 위 블록을 지우고 아래 text/python 블록만 남겨도 됩니다.
-  <script type="text/python">
-  (동일 코드)
-  </script>
   -->
-
 </body>
 </html>
