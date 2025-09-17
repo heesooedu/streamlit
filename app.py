@@ -246,3 +246,5 @@ with c2:
     st.metric("이론 최대높이 (m)", f"{hmax_theory:.2f}")
 
 st.caption("※ 위 메트릭은 이론식(공기저항 무시), 화면 라벨은 시뮬레이션 추정치입니다.")
+st.caption(f"LIB_DIR = {LIB_DIR}")
+
