@@ -3,19 +3,23 @@
 <head>
   <meta charset="utf-8" />
   <style>
-    body { margin:0; padding:0; }
-    .glowscript { width: 100%; height: 100%; }
+    html, body { width:100%; height:100%; margin:0; padding:0; }
+    #glowscript   { width:100%; height:100%; }
   </style>
-  <!-- GlowScript 런타임 (온라인 CDN) -->
-  <script type="text/javascript" src="https://www.glowscript.org/lib/glow.3.2.min.js"></script>
-  <script type="text/javascript" src="https://www.glowscript.org/lib/jquery/2.1/jquery.min.js"></script>
-  <script type="text/javascript" src="https://www.glowscript.org/lib/jquery/2.1/jquery-ui.custom.min.js"></script>
-  <script type="text/javascript" src="https://www.glowscript.org/lib/glowscript.min.js"></script>
+  <!-- 반드시 이 순서 유지 -->
+  <script src="https://www.glowscript.org/lib/jquery/2.1/jquery.min.js"></script>
+  <script src="https://www.glowscript.org/lib/jquery/2.1/jquery-ui.custom.min.js"></script>
+  <script src="https://www.glowscript.org/lib/glow.3.2.min.js"></script>
 </head>
 <body>
-  <div id="glowscript" class="glowscript"></div>
+  <div id="glowscript"></div>
 
-  <!-- 여기에 VPython(GlowScript) Python 코드 작성 -->
+  <!-- 이 줄이 없으면 화면이 안 뜹니다 -->
+  <script type="text/javascript">
+    window.__context = { glowscript_container: $("#glowscript") };
+  </script>
+
+  <!-- 여기부터 GlowScript Python -->
   <script type="text/python">
 from vpython import *
 
@@ -51,31 +55,22 @@ label_info  = label(pos=vector(30,12,0), text="", box=False, height=14, color=co
 ymin = 0.0
 while ball.pos.y >= ymin:
     rate(200)
-    # 등가속도 운동(공기저항 X)
     v = v + vector(0, -g, 0)*dt
     ball.pos = ball.pos + v*dt
     t += dt
 
-# 지면 도달 시 사거리 계산(선형 보정)
-# 마지막 스텝에서 y<0일 수 있으므로 직선보간으로 x교차점 추정
-# 이전 위치로 되돌려서 보정
-ball.pos = ball.pos - v*dt   # 한 스텝 되돌림
+# 지면 도달 보정
+ball.pos = ball.pos - v*dt
 t -= dt
-# y가 0이 되는 시간을 미세 조정
-# vy<0이므로, y + vy*τ = 0  ->  τ = -y/vy
-tau = 0.0
-if v.y < 0:
-    tau = ball.pos.y/(-v.y)
+tau = ball.pos.y/(-v.y) if v.y < 0 else 0.0
 ball.pos = ball.pos + v*tau
 t += tau
 
 range_est = ball.pos.x
 time_of_flight = t
-hmax_est = (v0**2 * sin(angle)**2) / (2*g)  # 이론 최대높이 (공기저항 무시)
+hmax_est = (v0**2 * sin(angle)**2) / (2*g)
 
 label_info.text = f"사거리 ≈ {range_est:.2f} m\n비행시간 ≈ {time_of_flight:.2f} s\n이론 최대높이 ≈ {hmax_est:.2f} m"
-
-# 카메라 위치 보정
 scene.center = vector(max(15, range_est/2), 5, 0)
   </script>
 </body>
