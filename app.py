@@ -63,12 +63,8 @@ with col_sim:
                    )
 
     # 임베딩 (값 변경 시 재렌더링 → 시뮬 리셋)
-    #st.components.v1.html(html_filled, height=520, scrolling=False)
-    # st.components.v1.html(html_filled, height=520, scrolling=False, key=f"sim-{g}-{v0}-{angle}")
+    st.components.v1.html(html_filled, height=520, scrolling=False)
 
-    # 2) 임베딩: key 추가(값 바뀌면 iframe 재생성)
-    st.components.v1.html(html_filled, height=520, scrolling=False, 
-                          key=f"sim-{g}-{v0}-{angle}-{datetime.now().strftime('%H%M%S')}")
 st.markdown("---")
 
 # ======= 간단 분석(이론 사거리) =======
