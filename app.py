@@ -63,7 +63,9 @@ with col_sim:
                    )
 
     # 임베딩 (값 변경 시 재렌더링 → 시뮬 리셋)
-    st.components.v1.html(html_filled, height=520, scrolling=False)
+    #st.components.v1.html(html_filled, height=520, scrolling=False)
+    st.components.v1.html(html_filled, height=520, scrolling=False, key=f"sim-{g}-{v0}-{angle}")
+
 
 st.markdown("---")
 
