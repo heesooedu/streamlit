@@ -91,3 +91,30 @@ document.getElementById('t').innerText = 'iframe 안에서 JS 실행 OK';
 </script>
 """, height=60)
 
+st.markdown("#### GlowScript CDN 로딩 진단")
+st.components.v1.html("""
+<div id="status" style="font:12px/1.4 sans-serif;padding:6px;border:1px dashed #bbb"></div>
+<script>
+const libs = [
+  "https://www.glowscript.org/lib/jquery/2.1/jquery.min.js",
+  "https://www.glowscript.org/lib/jquery/2.1/jquery-ui.custom.min.js",
+  "https://www.glowscript.org/lib/glow.3.2.min.js",
+  "https://www.glowscript.org/package/RSrun.3.2.min.js",
+  "https://www.glowscript.org/package/RScompile.3.2.min.js"
+];
+const s = document.getElementById('status');
+function log(msg){ s.innerText += msg + "\\n"; }
+(async ()=>{
+  for (const url of libs){
+    await new Promise(res=>{
+      const el = document.createElement('script');
+      el.src = url;
+      el.onload = ()=>{ log("loaded: " + url); res(); }
+      el.onerror = ()=>{ log("**FAILED**: " + url); res(); }
+      document.body.appendChild(el);
+    });
+  }
+})();
+</script>
+""", height=140, scrolling=False)
+
