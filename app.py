@@ -187,7 +187,7 @@ scene.center = vector(max(15, range_est/2), 5, 0)
 """.format(g=g, v0=v0, angle_deg=angle_deg)
 
     tail = """
-<script type="text/python">
+<script type="text/vpython">
 # 위에서 구성한 pycode가 이 자리에 삽입됩니다.
 </script>
 </body>
