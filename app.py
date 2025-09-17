@@ -228,8 +228,11 @@ with col_ctrl:
 with col_sim:
     st.subheader("시뮬레이션")
     # 처음엔 "hello"로 바꿔 빨간 박스 확인 -> 되면 "projectile"로 변경
-    html = build_sim_html(g=g, v0=v0, angle_deg=angle, mode="projectile")
-    st.components.v1.html(html, height=520, scrolling=False)  # key 인자 쓰지 마세요
+    #html = build_sim_html(g=g, v0=v0, angle_deg=angle, mode="projectile")
+    #st.components.v1.html(html, height=520, scrolling=False)  # key 인자 쓰지 마세요
+    # with col_sim:
+    html = build_sim_html(g=g, v0=v0, angle_deg=angle, mode="hello")  # ← 일단 hello
+    st.components.v1.html(html, height=520, scrolling=False)
 
 st.markdown("---")
 
