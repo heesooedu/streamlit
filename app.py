@@ -2,7 +2,7 @@ import streamlit as st
 from string import Template
 
 st.set_page_config(page_title="VPython in Streamlit", layout="wide")
-st.title("GlowScript VPython × Streamlit Demo")
+st.title("GlowScript VPython × Streamlit — Minimal DOM init")
 
 # ---- Controls ----
 col1, col2, col3 = st.columns(3)
@@ -15,22 +15,23 @@ with col3:
 
 bg_color = "color.white" if bg_white else "vec(0.1,0.1,0.12)"
 
-# 너의 리포 경로 (브랜치가 master면 @master 로 바꾸기)
+# 네 리포(브랜치가 master면 @master로 바꾸기)
 BASE = "https://cdn.jsdelivr.net/gh/heesooedu/streamlit@main/static/glowscript"
 
 html_tpl = Template(r"""
-<div id="glowscript" class="glowscript" style="outline:none;"></div>
+<div id="glowscript" class="glowscript" style="outline:none;">[loading GlowScript...]</div>
 
-<!-- 1) jQuery (네가 올린 파일명 그대로, 같은 폴더에 있다고 가정) -->
+<!-- 1) (선택) jQuery: 일부 버전의 glow가 jQuery를 참조하므로 최소본만 -->
 <script src="${BASE}/jquery.min.js"></script>
-<script src="${BASE}/jquery-ui.custom.min.js"></script>
 
-<!-- 2) GlowScript가 그릴 대상 지정 (jQuery 필요) -->
+<!-- 2) 컨테이너를 '순수 DOM 노드'로 지정 -->
 <script>
-  window.__context = { glowscript_container: $("#glowscript") };
+  // jQuery 객체가 아니라 '진짜 DOM 노드'를 넘깁니다.
+  window.__context = { glowscript_container: document.getElementById("glowscript") };
+  console.log("Glow container prepared:", window.__context.glowscript_container);
 </script>
 
-<!-- 3) GlowScript 핵심 라이브러리 (네 리포의 정확한 파일명 사용) -->
+<!-- 3) GlowScript 핵심 라이브러리 (순서: glow -> RSrun -> RScompiler) -->
 <script src="${BASE}/glow.3.2.min.js"></script>
 <script src="${BASE}/RSrun.3.2.min.js"></script>
 <script src="${BASE}/RScompiler.3.2.min.js"></script>
@@ -58,6 +59,18 @@ while True:
     rate(60)
     b.rotate(angle=rot_speed, axis=vec(0,1,0))
 </script>
+
+<!-- 5) 안전장치: 2초 후에 캔버스가 안 붙었으면 경고를 띄움 -->
+<script>
+  setTimeout(() => {
+    const host = document.getElementById("glowscript");
+    const hasCanvas = host && host.querySelector("canvas");
+    console.log("Glow post-check, canvas exists?", !!hasCanvas, host);
+    if (!hasCanvas) {
+      host.innerHTML = "<div style='color:#c00;font-weight:600'>GlowScript 캔버스가 생성되지 않았습니다. 콘솔 에러와 Network를 다시 확인하세요.</div>";
+    }
+  }, 2000);
+</script>
 """)
 
 html = html_tpl.safe_substitute(
@@ -70,8 +83,6 @@ html = html_tpl.safe_substitute(
 st.components.v1.html(html, height=620)
 
 st.caption(
-    "Network 탭에서 jquery.min.js / jquery-ui.custom.min.js / glow.3.2.min.js / "
-    "RSrun.3.2.min.js / RScompiler.3.2.min.js 가 모두 200 OK인지 확인하세요. "
-    "브랜치가 master면 BASE의 @main을 @master로 바꾸세요. "
-    "jsDelivr 캐시가 느리면 URL 끝에 ?v=1 붙이고 강력 새로고침(Ctrl+F5)."
+    "필수 체크: Network에서 jquery.min.js / glow.3.2.min.js / RSrun.3.2.min.js / RScompiler.3.2.min.js 모두 200 OK. "
+    "Console에 에러가 없어야 하며, 2초 뒤 'canvas exists? true'가 찍혀야 정상."
 )
