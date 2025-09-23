@@ -5,13 +5,10 @@ st.title("GlowScript VPython × Streamlit Demo")
 
 # ---- 위젯 (3열) ----
 col1, col2, col3 = st.columns(3)
-
 with col1:
     rot_speed = st.slider("회전 속도 (rad/s)", min_value=0.0, max_value=0.2, value=0.03, step=0.005)
-
 with col2:
     box_size = st.slider("박스 크기", min_value=0.1, max_value=3.0, value=1.0, step=0.1)
-
 with col3:
     bg_white = st.toggle("배경: 흰색", value=True)
 
@@ -20,10 +17,20 @@ bg_color = "color.white" if bg_white else "vec(0.1,0.1,0.12)"
 # ---- GlowScript + VPython 임베드 ----
 html = f"""
 <div id="glowscript" class="glowscript"></div>
-<!-- 필수 라이브러리 -->
+
+<!-- jQuery (GlowScript 컨테이너 지정에 필요) -->
+<script src="https://www.glowscript.org/lib/jquery/3.1/jquery.min.js"></script>
+<script src="https://www.glowscript.org/lib/jquery/3.1/jquery-ui.min.js"></script>
+
+<!-- GlowScript 필수 라이브러리 -->
 <script src="https://www.glowscript.org/lib/glow.3.2.min.js"></script>
 <script src="https://www.glowscript.org/lib/RSrun.3.2.min.js"></script>
 <script src="https://www.glowscript.org/lib/RScompile.3.2.min.js"></script>
+
+<!-- 여기서 'glowscript' div를 렌더링 타깃으로 지정 -->
+<script type="text/javascript">
+window.__context = {{ glowscript_container: $("#glowscript") }};
+</script>
 
 <!-- VPython 코드 -->
 <script type="text/python">
@@ -48,4 +55,4 @@ while True:
 </script>
 """
 
-st.components.v1.html(html, height=580)
+st.components.v1.html(html, height=600)
