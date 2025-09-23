@@ -14,22 +14,18 @@ with col3:
 
 bg_color = "color.white" if bg_white else "vec(0.1,0.1,0.12)"
 
-# ---- GlowScript + VPython 임베드 ----
+# ---- GlowScript + VPython 임베드 (jQuery 제거 버전) ----
 html = f"""
 <div id="glowscript" class="glowscript"></div>
-
-<!-- jQuery (GlowScript 컨테이너 지정에 필요) -->
-<script src="https://www.glowscript.org/lib/jquery/3.1/jquery.min.js"></script>
-<script src="https://www.glowscript.org/lib/jquery/3.1/jquery-ui.min.js"></script>
 
 <!-- GlowScript 필수 라이브러리 -->
 <script src="https://www.glowscript.org/lib/glow.3.2.min.js"></script>
 <script src="https://www.glowscript.org/lib/RSrun.3.2.min.js"></script>
 <script src="https://www.glowscript.org/lib/RScompile.3.2.min.js"></script>
 
-<!-- 여기서 'glowscript' div를 렌더링 타깃으로 지정 -->
+<!-- 컨테이너를 순정 JS로 지정 -->
 <script type="text/javascript">
-window.__context = {{ glowscript_container: $("#glowscript") }};
+  window.__context = {{ glowscript_container: document.getElementById("glowscript") }};
 </script>
 
 <!-- VPython 코드 -->
