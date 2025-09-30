@@ -1,8 +1,3 @@
-diff --git a/app.py b/app.py
-index c77882172f52b5daf6ab86ca3032692e9943714c..fa294d91597425d042b5386c2cf398b52dc7e2c9 100644
---- a/app.py
-+++ b/app.py
-@@ -1,42 +1,46 @@
  # app.py
  import base64
  import json
